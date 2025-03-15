@@ -1,0 +1,366 @@
+I want to create a system similar to quickbooks but for manufacturers and distributors. So basically when a user wants to acees the web app, they either register as a manufacturer, distributor, both, or through an invite link if they are a member of an already registered company in the system. For now we will start with creating a system for manufacturers then we will move on to the distributor. There will be roles for users belonging to a certain company. Lets say managerial, supervisor, employees(sales), employee(production) So there will be restrictions as to what each user can access, of course with the managerial  accessing everything. The interface should be nearly identical to quickbooks, however I will provide the ui for each page or guide you on how I want it to be. So for the sales side it will be the same for both manufacturers and distributors, the following forms will be used: sales receipt, invoice, refund receipt, credit note, receive payment, statement, estimate. On the purchase side, for manufactures there will be mainly goods that will be used in the production process maybe raw materials, packaging, repairs, machinery etc, each manufacturer in the system can choose his own purchases, so the forms here will be Expenses, bill, supplier credit, purchase order etc, am not really sure how this will be, feel free to research maybe other manufacturing systems and let me know. Also for the forms I will provide the ui designs. 
+What will stand out in this system compared to others is the high level analytics that it will provide and also if I can have ai in the system, am not sure if it will be an ai agent or a chatbot, but something that can have access to the db and answer questions for the user, of course it should only have access to the db where it only sees data for that company and not for all, so we will need to ensure itdoes not see everything as am sure some one can trick it to reveal all the info for all companies. Also if you have any other cool unique features you think will give us a competitive edge in the market please let me know and we can discuss about it. 
+
+So for backend am thinking supabase that will simplify the authentication, handle database and storage. for frontend next.js. Am am  data analyst so all these stuff is new to me so I will learn as I go. So make sure to teach me as we go as well. I also need the project broken down into parts such that incase there is an issue/bug I can easily pinpoint it, I want simple and functional and optimized code in short files. High level documentation for each section of the project in read me and in code. My plan is to have this project super optimized so I don’t have performance issues when rolling out to customers. So in situations that need caching, improve speed and performance where a lot of people can be using the system without experiencing delays or server failure please implement them. Also you will be providing me with the sql for the tables I need to create in supabase as you teach me. Like do I need to use RLS? Etc.
+Another thing I want to self host any open source software that is needed in this project like supabase etc. this way it will be easy when transitioning this project from running in my local computer to a server. Also we will use docker and kubernetes if needed. Another thing is I want the project to be in github such that there is development branch where code is tested before moving it to production in the main branch. So am not sure how this is going to be but I depend on you to get creative with it and work wonders. So the plan it to have the project run locally in my machine then when I make progress ill move to a server.
+To begin maybe we can have a frontend and backend folder. For now we can go for a simple functional ui then you can fine tune it to the project and make sure it works well and data is saved to supabase. As well as making sure the process and code are optimized, simple functional and short files for easy debugging. If we will use api endpoints you can teach me on how they work and maybe even show me how to use swagger and all that. Once we have the authentication, login signup stuff done and the landing page once you login as well as a few forms lets say invoice working then we can have it run on docker test how it works. Then push the project to github and set up the CI/CD, development branch so that from then when we make changes we test it out in development before pushing to production. If you want we can first brainstorm on this idea, let me know what you think, go deep to the neety greeties of the functionalities, features, challenges that we are to face, possible solutions etc I know I might have missed a lot but that’s why I need your help so I can get a bigger picture of what am going into. 
+
+
+Process (Manufacturer): 
+1. Purchase
+- Purchase Order Form
+- Purchase Form - to record received goods that have been bought
+- Supplier credit form
+- Supplier Refund form
+2.Production
+- Production Record Form
+3.Packaging 
+- Packaging Record Form
+4.Transport(this is when finished goods are maybe moved from the factory store to a different store or just from one store to another. This is not transport for selling goods)
+- Transport Record Form
+5.Store/Warehouse
+- No form here, maybe analytics of what was brought or removed and what is in the store at the moment. Things that are about to expire or have expired, things that are low and need restocking etc
+- since this should be automatic, here the store clerk/supervisor should have the ability to check/confirm if products have really arrived in the store or exited for sale or whatever.
+-  this will handle both raw material stock and finished product stock.
+- maybe we can have a form to reconcile stuff just incase something is not adding up in the store and they have completely failed to account for it so we don’t carry forward the problem forever. However this should be recorded as reconsiled  or something.
+6.Sales
+- Invoice Form
+- Sales Receipt Form
+- Refund Receipt Form
+- Credit note Form
+- Statement Form
+- Estimate Form
+- Receive Payment Form
+
+Other Forms Needed(these will appear on the right side of the screen covering less than half the screen on top of the form we are in.) 
+1. Add New Customer
+2.Add New Supplier
+3.Add New Product
+4.Add New Machine
+5.Add New Storage Location
+All these should be like modules such that the admin can decide who sees what
+To add new sales rep, machine operator, packaging person, the admin can add them to the list and they wil appear in those drop down fields, they can also invite them if they want them to have access to the system.
+The admin will group all his employees in groups and give them specific permission on what they can and cannot access(the modules specifically).
+
+
+Purchase Order Form Fields
+Supplier name  (drop down with add new supplier option)
+Company name (automatic read only)
+Email (fetches email for the supplier selected, is editable)
+Mailing Address (fetches address details for the supplier selected, is editable)
+Shipping Address(the users company’s address)
+Purchase Order Date (calendar but defaults to today, editable)
+Procurement rep  (drop down but defaults to the current user) - if you want to add a sales rep admin adds/invites with email and gives permission.
+(Table like part:
+Product (drop down with Add new product option)
+Description 
+Quantity
+Unit of measure (not drop down, one can write)
+Unit price/ Rate
+Tax%
+Amount with tax (calculated and read only)
+)
+Total Net (calculated and read only) - without tax
+Tax (calculated and read only)
+Total Gross (calculated and read only) -with tax
+Grand Total payable
+Note /messge to supplier. 
+
+
+Purchase Form Fields
+Supplier name  (drop down with add new supplier option)
+Company name (automatic read only)
+Email (fetches email for the supplier selected, is editable)
+Purchase Date (calendar but defaults to today, editable)
+Procurement rep  (drop down but defaults to the current user) - if you want to add a sales rep admin adds/invites with email and gives permission.
+(Table like part:
+Product (drop down with Add new product option)
+Description 
+Quantity
+Unit of measure (drop down)
+Unit price/ Rate
+Tax%
+Amount with tax (calculated and read only)
+)
+Total Net (calculated and read only) - without tax
+Tax (calculated and read only)
+Total Gross (calculated and read only) -with tax
+Grand Total payable
+Amount Paid
+Note  
+
+
+Supplier credit form
+Supplier name  (drop down with add new supplier option)
+Company name (automatic read only)
+Email (fetches email for the supplier selected, is editable)
+Mailing Address (fetches address details for the supplier selected, is editable)
+Date (calendar but defaults to today, editable)
+Procurement rep  (drop down but defaults to the current user) - if you want to add a procurement rep admin adds/invites with email and gives permission.
+-> I want when you select the supplier name,somewhere a table appears with all the purchases from that supplier then one can select one row and it auto populates the table below with all the details about that products purchase from product name to amount then maybe one can edit the quantity
+(Table like part:
+Product (drop down with Add new product option)
+Description 
+Quantity
+Unit of measure (drop down)
+Unit price/ Rate
+Tax%
+Amount with tax (calculated and read only)
+)
+Total Net (calculated and read only) - without tax
+Tax (calculated and read only)
+Total Gross (calculated and read only) -with tax
+Grand Total 
+Note  
+
+
+Supplier refund form
+Supplier name  (drop down with add new supplier option)
+Company name (automatic read only)
+Email (fetches email for the supplier selected, is editable)
+Mailing Address (fetches address details for the supplier selected, is editable)
+Date (calendar but defaults to today, editable)
+Procurement rep  (drop down but defaults to the current user) - if you want to add a sales rep admin adds/invites with email and gives permission.
+-> I want when you select the supplier name,somewhere a table appears with all the purchases from that supplier then one can select one row and it auto populates the table below with all the details about that products purchase from product name to amount then maybe one can edit the quantity
+(Table like part:
+Product (drop down with Add new product option)
+Description 
+Quantity
+Unit of measure (drop down)
+Unit price/ Rate
+Tax%
+Amount with tax (calculated and read only)
+)
+Total Net (calculated and read only) - without tax
+Tax (calculated and read only)
+Total Gross (calculated and read only) -with tax
+Grand Total 
+Amount to received:
+Note  
+
+
+Production Record Form
+Date
+Operator name(drop down but defaults to the current user) - if you want to add a operator, admin adds/invites with email and gives permission.
+Machine name(drop down with add new option, only admin/ supervisor can add a new machine)
+Start time and end time
+Input table to capture: 
+- raw material name (drop down with add new option, only admin/ supervisor can add)
+- quantity
+- units of measure = ltrs or kgs 
+- description
+output table to capture: 
+- output product name (drop down with add new option, only admin/ supervisor can add)
+- quantity
+- units of measure = ltrs or kgs 
+- description
+
+
+ Packaging Record Form
+Date
+Packaging person name (drop down but defaults to the current user) - if you want to add a packaging person, admin/packaging supervisor adds/ invites with email.
+From(product name from production) only drop down with products from production, cant add a new product name here
+To(product name used by sales) - here option to add a new product is there in the drop down and takes you to the add new product form. Admin or packaging supervisor can add
+Quantity
+Unit of measure (dropdown either the primary unit of measure or secondary unit of measure for that product selected)
+Storage Location- where the product are, drop down with add new option. Admin or packaging supervisor can add
+
+
+
+Transport Record Form
+Date
+Name of Transporter (drop down but defaults to the current user) - if you want to add a transporter, admin/transport supervisor adds/ invites with email.
+Product name drop down with products from storage locations
+Quantity
+Unit of measure (dropdown either the primary unit of measure or secondary unit of measure for that product selected)
+From (storage location)
+To (storage location)
+
+
+
+
+Invoice Form Fields:
+Customer name  (drop down with add new customer option)
+Company name (automatic read only)
+Email (fetches email for the customer selected, is editable)
+Billing Address (fetches address details for the customer selected, is editable)
+Invoice Date (calendar but defaults to today)
+Due date (calendar if payment term is custom)
+Payment term (drop down with ‘net 15, net 30, net 60, due on receipt, custom’ options)
+Sales rep  (drop down but defaults to the current user) - if you want to add a sales rep admin adds/invites with email and gives permission.
+Table:(
+Product (drop down with Add new product option)
+Description 
+Quantity
+Unit of measure (drop down)
+Unit price/ Rate
+Tax%
+Amount with tax (calculated and read only)
+)
+Total Net (calculated and read only) - without tax
+Tax (calculated and read only)
+Total Gross (calculated and read only) -with tax
+Other fees: Description, Amount
+Grand Total payable
+Note. 
+
+
+
+- Sales Receipt Form
+Customer name  (drop down with add new customer option)
+Company name (automatic read only)
+Email (fetches email for the customer selected, is editable)
+Billing Address (fetches address details for the customer selected, is editable)
+Sale Receipt Date (calendar but defaults to today)
+Sales rep  (drop down but defaults to the current user) - if you want to add a sales rep admin adds/invites with email and gives permission.
+Table:(
+Product (drop down with Add new product option)
+Description 
+Quantity
+Unit of measure (drop down)
+Unit price/ Rate
+Tax%
+Amount with tax (calculated and read only)
+)
+Total Net (calculated and read only) - without tax
+Tax (calculated and read only)
+Total Gross (calculated and read only) -with tax
+Other fees: Description, Amount
+Grand Total received
+Note. 
+
+Refund Receipt Form
+- In this one we can add a table showing all the invoices&sale receipt for that customer with a checkbox for each so that lets say if the checkbox is checked the in the table with product details a row is automatically generated with details for that invoice/salereceipt assuming the customer has returned that, it should also be editable just incase the customer returned a few quantity. It should be tied to an invoice/sales receipt
+Customer name  (drop down with add new customer option)
+Company name (automatic read only)
+Email (fetches email for the customer selected, is editable)
+Billing Address (fetches address details for the customer selected, is editable)
+Refund Receipt Date (calendar but defaults to today)
+Sales rep  (drop down but defaults to the current user) - if you want to add a sales rep admin adds/invites with email and gives permission.
+Table:(
+Product (drop down with Add new product option)
+Description 
+Quantity
+Unit of measure (drop down)
+Unit price/ Rate
+Tax%
+Amount with tax (calculated and read only)
+)
+Total Net (calculated and read only) - without tax
+Tax (calculated and read only)
+Total Gross (calculated and read only) -with tax
+Other fees: Description, Amount
+Grand Total refunded
+Note. 
+
+
+Credit note Form
+- In this one we can add a table showing all the invoices&sale receipt for that customer with a checkbox for each so that lets say if the checkbox is checked the in the table with product details a row is automatically generated with details for that invoice/salereceipt assuming the customer has returned that, it should also be editable just incase the customer returned a few quantity. It should be tied to an invoice/sales receipt
+Customer name  (drop down with add new customer option)
+Company name (automatic read only)
+Email (fetches email for the customer selected, is editable)
+Billing Address (fetches address details for the customer selected, is editable)
+Credit note Date (calendar but defaults to today)
+Sales rep  (drop down but defaults to the current user) - if you want to add a sales rep admin adds/invites with email and gives permission.
+Table:(
+Product (drop down with Add new product option)
+Description 
+Quantity
+Unit of measure (drop down)
+Unit price/ Rate
+Tax%
+Amount with tax (calculated and read only)
+)
+Total Net (calculated and read only) - without tax
+Tax (calculated and read only)
+Total Gross (calculated and read only) -with tax
+Other fees: Description, Amount
+Grand Total credit
+Note. 
+
+
+Statement Form
+This we will work on later as it is just selecting a customer name and timeperiod and generate a statement of all transactions we have  made with them with the current balance/credit.
+
+
+Estimate Form
+Customer name  (drop down with add new customer option)
+Company name (automatic read only)
+Email (fetches email for the customer selected, is editable)
+Billing Address (fetches address details for the customer selected, is editable)
+Estimate Date (calendar but defaults to today)
+Expiration date (calendar)
+Sales rep  (drop down but defaults to the current user) - if you want to add a sales rep admin adds/invites with email and gives permission.
+Table:(
+Product (drop down with Add new product option)
+Description 
+Quantity
+Unit of measure (drop down)
+Unit price/ Rate
+Tax%
+Amount with tax (calculated and read only)
+)
+Total Net (calculated and read only) - without tax
+Tax (calculated and read only)
+Total Gross (calculated and read only) -with tax
+Other fees: Description, Amount
+Grand Total estimate
+Note. 
+
+
+
+Receive Payment Form
+Customer name  (drop down with add new customer option)
+Company name (automatic read only)
+Email (fetches email for the customer selected, is editable)
+Payment Date (calendar but defaults to today)
+Amount Received
+When you select a customer a table appears below with all the unpaid invoices for that customer.each row representing an unpaid/partially paid invoice with the necessary details like date, invoice number, product(qty), grand total payable, open balance, payment. So there will be a checkbox on the left of each row where when you select it auto fills the payment  value with the open balance assuming you want to clear that invoice. The payment column values will be editable just incase the customer is partially paying for that invoice.
+Alternatively if the amount received field is filled directly that amount is distributed to the unpaid invoices in the table in that the oldest invoice open balance is cleared, then the remaining goes as payment for the next oldest invoice etc.
+
+
+Add Customer form (Add new customer):
+Customer name
+Company name 
+Phone number 
+Email
+Billing Address
+Country
+Notes
+Opening balance as of:
+
+Add Product Form(Add new product)
+Name
+Category
+Photo
+Primary unit of measure
+Secondary unit of measure
+Where 1 (primary unit of measure) = ? kgs
+Where 1 (Secondary unit of measure) = ? (Primary unit of measure)
+Quantity on hand:     ?    as of: (date)
+Reorder point: ?
+primary unit of measure buying price:
+Preferred supplier
+Expiry date
+
+Role based. I want this system to be like modules in that the admin can give different roles permissions or remove permission at will.
+So the roles will be like this:
+Owner(which will basically be me who is creating)
+Admin - these will be the managerial team of my client companies they will have access to everything 
+Sales Supervisor
+Sales rep
+Procurement Supervisor
+Procurement rep
+Production Supervisor
+Machine Operator
+Packaging Supervisor
+Packaging person
+Transport Supervisor
+Transport person
+Store Supervisor
+Store person
+Hr Supervisor - this we will add employee stuff later
+- A person can have multiple roles. Then the admin can decide the permissions what each category gets.
+
+What do you think of this? Any easier way to handle the roles? Any improvements you have in mind.
+
