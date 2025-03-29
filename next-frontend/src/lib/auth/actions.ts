@@ -15,7 +15,7 @@ export async function signUp(
     company_type?: string;
     phone?: string;
     address?: string;
-    is_admin?: boolean;
+    is_superadmin?: boolean;
   }
 ) {
   const supabase = createServerSupabaseClient();

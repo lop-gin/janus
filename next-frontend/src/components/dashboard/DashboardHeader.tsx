@@ -29,8 +29,8 @@ export default function DashboardHeader({ sidebarOpen, toggleSidebar }: Dashboar
 
   // Determine user roles
   const userRoles = [];
-  if (userMetadata?.is_admin) {
-    userRoles.push('admin');
+  if (userMetadata?.is_superadmin) {
+    userRoles.push('superadmin');
   }
   
   return (

@@ -3,6 +3,7 @@ import React from "react";
 import { cn } from "@/lib/utils";
 
 type UserRole =
+  | "superadmin"
   | "admin"
   | "sales_supervisor"
   | "sales_rep"
@@ -19,6 +20,7 @@ type UserRole =
   | "hr_supervisor";
 
 const roleColors: Record<UserRole, { bg: string; text: string }> = {
+  superadmin: { bg: "bg-black", text: "text-white" },
   admin: { bg: "bg-red-100", text: "text-red-800" },
   sales_supervisor: { bg: "bg-blue-100", text: "text-blue-800" },
   sales_rep: { bg: "bg-blue-50", text: "text-blue-600" },
@@ -36,6 +38,7 @@ const roleColors: Record<UserRole, { bg: string; text: string }> = {
 };
 
 const roleLabels: Record<UserRole, string> = {
+  superadmin: "Super Admin",
   admin: "Admin",
   sales_supervisor: "Sales Supervisor",
   sales_rep: "Sales Rep",

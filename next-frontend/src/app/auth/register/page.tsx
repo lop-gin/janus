@@ -176,7 +176,7 @@ export default function RegisterPage() {
         company_type: formData.companyType,
         phone: formData.phone,
         address: formData.address,
-        is_admin: true,
+        is_superadmin: true,
       });
 
       toast.success("Registration successful! Redirecting to dashboard...");

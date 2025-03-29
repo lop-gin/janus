@@ -16,7 +16,7 @@ type AuthContextType = {
     company_type?: string;
     phone?: string;
     address?: string;
-    is_admin?: boolean;
+    is_superadmin?: boolean;
   }) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -68,7 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     company_type?: string;
     phone?: string;
     address?: string;
-    is_admin?: boolean;
+    is_superadmin?: boolean;
   }) => {
     setIsLoading(true);
     

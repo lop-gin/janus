@@ -314,7 +314,7 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
-          is_admin: boolean | null
+          is_superadmin: boolean | null
           phone: string | null
           role_id: string | null
           status: string | null
@@ -327,7 +327,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id: string
-          is_admin?: boolean | null
+          is_superadmin?: boolean | null
           phone?: string | null
           role_id?: string | null
           status?: string | null
@@ -340,7 +340,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
-          is_admin?: boolean | null
+          is_superadmin?: boolean | null
           phone?: string | null
           role_id?: string | null
           status?: string | null
