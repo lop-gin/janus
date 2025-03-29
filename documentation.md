@@ -33,14 +33,45 @@ The frontend is organized into the following main components:
 
 ### Database Schema
 
-The database schema is designed to support all the functionality required by a manufacturing system, including:
+# Supabase Database Documentation
 
-- Authentication & Authorization (companies, profiles, roles, permissions)
-- Inventory & Products (products, categories, units of measure, storage locations)
-- Purchasing (suppliers, purchase orders, purchases, supplier credits/refunds)
-- Production (production records, inputs/outputs)
-- Packaging & Transport (packaging records, transport records)
-- Sales (customers, invoices, sales receipts, refund receipts, credit notes)
+## Current Schema Overview
+
+The database schema has been designed for a manufacturing management system with multi-tenant support through Row Level Security (RLS). Key components include:
+
+### Core Tables
+1. **companies** - Stores company information with type classification (manufacturer/distributor/both)
+2. **users** - User accounts with company association and authentication details
+3. **roles** - Defines roles with JSONB permissions
+4. **user_roles** - Junction table for user-role assignments
+5. **modules** - System modules with default values for Sales, Purchasing, Production etc.
+
+### Security Features
+- **Row Level Security Policies** implemented for:
+  - companies
+  - users
+  - roles
+  - user_roles
+- **current_user_id()** function to get authenticated user ID from JWT
+- **enable_rls_for_tables()/disable_rls_for_tables()** functions for maintenance
+
+### Utility Functions
+- **execute_sql()** - Executes raw SQL with proper error handling and JSONB response
+
+## Implementation Notes
+1. All tables use SERIAL primary keys
+2. Created/updated timestamps are automatically managed
+3. RLS policies ensure data isolation between companies
+4. The schema is designed to integrate with Supabase Auth
+
+## Next Steps
+1. Review and document frontend components
+2. Plan API endpoints for manufacturing operations
+3. Implement additional business logic tables (products, inventory, production etc.)
+
+---
+
+This documentation will be updated as the schema evolves.
 
 ## Forms Implementation
 
