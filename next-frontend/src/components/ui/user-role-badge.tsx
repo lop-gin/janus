@@ -1,68 +1,72 @@
-
+// src/components/ui/user-role-badge.tsx
 import React from "react";
 import { cn } from "@/lib/utils";
 
+// Update UserRole to match database format (title case with spaces)
 type UserRole =
-  | "superadmin"
-  | "admin"
-  | "sales_supervisor"
-  | "sales_rep"
-  | "procurement_supervisor"
-  | "procurement_rep"
-  | "production_supervisor"
-  | "machine_operator"
-  | "packaging_supervisor"
-  | "packaging_person"
-  | "transport_supervisor"
-  | "transport_person"
-  | "store_supervisor"
-  | "store_person"
-  | "hr_supervisor";
+  | "Super Admin"
+  | "Admin"
+  | "Sales Supervisor"
+  | "Sales Rep"
+  | "Procurement Supervisor"
+  | "Procurement Rep"
+  | "Production Supervisor"
+  | "Machine Operator"
+  | "Packaging Supervisor"
+  | "Packaging Person"
+  | "Transport Supervisor"
+  | "Transport Person"
+  | "Store Supervisor"
+  | "Store Person"
+  | "HR Supervisor";
 
+// Update roleColors keys to match
 const roleColors: Record<UserRole, { bg: string; text: string }> = {
-  superadmin: { bg: "bg-black", text: "text-white" },
-  admin: { bg: "bg-red-100", text: "text-red-800" },
-  sales_supervisor: { bg: "bg-blue-100", text: "text-blue-800" },
-  sales_rep: { bg: "bg-blue-50", text: "text-blue-600" },
-  procurement_supervisor: { bg: "bg-purple-100", text: "text-purple-800" },
-  procurement_rep: { bg: "bg-purple-50", text: "text-purple-600" },
-  production_supervisor: { bg: "bg-yellow-100", text: "text-yellow-800" },
-  machine_operator: { bg: "bg-yellow-50", text: "text-yellow-600" },
-  packaging_supervisor: { bg: "bg-green-100", text: "text-green-800" },
-  packaging_person: { bg: "bg-green-50", text: "text-green-600" },
-  transport_supervisor: { bg: "bg-orange-100", text: "text-orange-800" },
-  transport_person: { bg: "bg-orange-50", text: "text-orange-600" },
-  store_supervisor: { bg: "bg-teal-100", text: "text-teal-800" },
-  store_person: { bg: "bg-teal-50", text: "text-teal-600" },
-  hr_supervisor: { bg: "bg-pink-100", text: "text-pink-800" },
+  "Super Admin": { bg: "bg-black", text: "text-white" },
+  "Admin": { bg: "bg-red-100", text: "text-red-800" },
+  "Sales Supervisor": { bg: "bg-blue-100", text: "text-blue-800" },
+  "Sales Rep": { bg: "bg-blue-50", text: "text-blue-600" },
+  "Procurement Supervisor": { bg: "bg-purple-100", text: "text-purple-800" },
+  "Procurement Rep": { bg: "bg-purple-50", text: "text-purple-600" },
+  "Production Supervisor": { bg: "bg-yellow-100", text: "text-yellow-800" },
+  "Machine Operator": { bg: "bg-yellow-50", text: "text-yellow-600" },
+  "Packaging Supervisor": { bg: "bg-green-100", text: "text-green-800" },
+  "Packaging Person": { bg: "bg-green-50", text: "text-green-600" },
+  "Transport Supervisor": { bg: "bg-orange-100", text: "text-orange-800" },
+  "Transport Person": { bg: "bg-orange-50", text: "text-orange-600" },
+  "Store Supervisor": { bg: "bg-teal-100", text: "text-teal-800" },
+  "Store Person": { bg: "bg-teal-50", text: "text-teal-600" },
+  "HR Supervisor": { bg: "bg-pink-100", text: "text-pink-800" },
 };
 
+// Since role matches the display text, roleLabels might not be needed, but keep it for flexibility
 const roleLabels: Record<UserRole, string> = {
-  superadmin: "Super Admin",
-  admin: "Admin",
-  sales_supervisor: "Sales Supervisor",
-  sales_rep: "Sales Rep",
-  procurement_supervisor: "Procurement Supervisor",
-  procurement_rep: "Procurement Rep",
-  production_supervisor: "Production Supervisor",
-  machine_operator: "Machine Operator",
-  packaging_supervisor: "Packaging Supervisor",
-  packaging_person: "Packaging Person",
-  transport_supervisor: "Transport Supervisor",
-  transport_person: "Transport Person",
-  store_supervisor: "Store Supervisor",
-  store_person: "Store Person",
-  hr_supervisor: "HR Supervisor",
+  "Super Admin": "Super Admin",
+  "Admin": "Admin",
+  "Sales Supervisor": "Sales Supervisor",
+  "Sales Rep": "Sales Rep",
+  "Procurement Supervisor": "Procurement Supervisor",
+  "Procurement Rep": "Procurement Rep",
+  "Production Supervisor": "Production Supervisor",
+  "Machine Operator": "Machine Operator",
+  "Packaging Supervisor": "Packaging Supervisor",
+  "Packaging Person": "Packaging Person",
+  "Transport Supervisor": "Transport Supervisor",
+  "Transport Person": "Transport Person",
+  "Store Supervisor": "Store Supervisor",
+  "Store Person": "Store Person",
+  "HR Supervisor": "HR Supervisor",
 };
 
+// Relax the prop type to string since userData.roles is string[]
 interface UserRoleBadgeProps {
-  role: UserRole;
+  role: string; // Will cast to UserRole safely
   className?: string;
 }
 
 export function UserRoleBadge({ role, className }: UserRoleBadgeProps) {
-  const { bg, text } = roleColors[role] || { bg: "bg-gray-100", text: "text-gray-800" };
-  const label = roleLabels[role] || role;
+  const { bg, text } = roleColors[role as UserRole] || { bg: "bg-gray-100", text: "text-gray-800" };
+  const label = roleLabels[role as UserRole] || role;
 
   return (
     <span
