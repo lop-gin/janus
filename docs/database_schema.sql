@@ -130,3 +130,53 @@ EXCEPTION WHEN OTHERS THEN
     );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER; 
+
+-- Add to your SQL schema or run in Supabase SQL editor
+
+CREATE OR REPLACE FUNCTION register_company_and_user(
+    p_auth_user_id UUID,
+    p_email TEXT,
+    p_full_name TEXT,
+    p_company_name TEXT,
+    p_company_type TEXT,
+    p_phone TEXT,
+    p_address TEXT
+)
+RETURNS JSONB AS $$
+DECLARE
+    v_company_id INTEGER;
+    v_user_id INTEGER;
+    v_role_id INTEGER;
+BEGIN
+    -- Insert into companies
+    INSERT INTO companies (name, email, phone, address, company_type)
+    VALUES (p_company_name, p_email, p_phone, p_address, p_company_type)
+    RETURNING id INTO v_company_id;
+
+    -- Insert into users
+    INSERT INTO users (company_id, name, email, auth_user_id, password_hash, is_active)
+    VALUES (v_company_id, p_full_name, p_email, p_auth_user_id, 'managed_by_supabase', TRUE)
+    RETURNING id INTO v_user_id;
+
+    -- Insert into roles (Super Admin)
+    INSERT INTO roles (company_id, role_name, description, permissions, is_system_role, created_by, updated_by)
+    VALUES (
+        v_company_id,
+        'Super Admin',
+        'Company owner with full system access',
+        '{"all_modules": true, "permissions": {"sales": ["view", "create", "edit", "delete"], "purchasing": ["view", "create", "edit", "delete"], "production": ["view", "create", "edit", "delete"], "packaging": ["view", "create", "edit", "delete"], "transport": ["view", "create", "edit", "delete"], "warehouse": ["view", "create", "edit", "delete"], "reports": ["view", "create", "edit", "delete"], "settings": ["view", "create", "edit", "delete"]}}'::jsonb,
+        TRUE,
+        v_user_id,
+        v_user_id
+    )
+    RETURNING id INTO v_role_id;
+
+    -- Insert into user_roles
+    INSERT INTO user_roles (user_id, role_id, created_by)
+    VALUES (v_user_id, v_role_id, v_user_id);
+
+    RETURN jsonb_build_object('success', true, 'company_id', v_company_id, 'user_id', v_user_id, 'role_id', v_role_id);
+EXCEPTION WHEN OTHERS THEN
+    RETURN jsonb_build_object('error', SQLERRM, 'detail', SQLSTATE);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

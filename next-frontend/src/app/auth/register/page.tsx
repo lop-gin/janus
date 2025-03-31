@@ -1,3 +1,4 @@
+// src/app/auth/register/page.tsx
 'use client';
 
 import React, { useState } from 'react';
@@ -162,12 +163,12 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateStep(step)) return;
-
+  
     if (step < 2) {
       setStep(prev => prev + 1);
       return;
     }
-
+  
     setIsLoading(true);
     try {
       await signUp(formData.email, formData.password, {
@@ -176,12 +177,8 @@ export default function RegisterPage() {
         company_type: formData.companyType,
         phone: formData.phone,
         address: formData.address,
-        is_superadmin: true,
       });
-
-      toast.success("Registration successful! Redirecting to dashboard...");
-      
-      // AuthProvider will handle redirection
+      // Success is handled by toast in AuthContext
     } catch (error: any) {
       console.error("Registration error:", error);
       toast.error(error.message || "Failed to register");

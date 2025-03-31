@@ -20,7 +20,41 @@ export async function signUp(
 ) {
   const supabase = createServerSupabaseClient();
   
-  const { error } = await supabase.auth.signUp({
+  // Start a transaction
+  const { data: companyData, error: companyError } = await supabase
+    .from('companies')
+    .insert({
+      name: metadata?.company_name,
+      address: metadata?.address,
+      phone: metadata?.phone,
+      email,
+      company_type: metadata?.company_type,
+    })
+    .select('id')
+    .single();
+
+  if (companyError) {
+    return { error: companyError.message };
+  }
+
+  const { data: userData, error: userError } = await supabase
+    .from('users')
+    .insert({
+      company_id: companyData.id,
+      name: metadata?.full_name,
+      email,
+      password_hash: '', // You should hash the password before storing it
+      phone: metadata?.phone,
+      is_active: true,
+    })
+    .select('id')
+    .single();
+
+  if (userError) {
+    return { error: userError.message };
+  }
+
+  const { error: authError } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -29,8 +63,8 @@ export async function signUp(
     },
   });
 
-  if (error) {
-    return { error: error.message };
+  if (authError) {
+    return { error: authError.message };
   }
 
   return { success: true, message: 'Check your email to confirm your account' };
@@ -132,3 +166,8 @@ export async function getUser() {
   const session = await getSession();
   return session?.user || null;
 }
+
+/**
+ * Update a user's auth_user_id in the database
+ */
+export async function updateUserAuthId(userId: number, authUserId: string) 
