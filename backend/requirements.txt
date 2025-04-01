@@ -1,0 +1,4 @@
+echo fastapi >> requirements.txt
+echo uvicorn >> requirements.txt
+echo supabase >> requirements.txt
+echo pyjwt >> requirements.txt

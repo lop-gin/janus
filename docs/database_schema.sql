@@ -180,3 +180,150 @@ EXCEPTION WHEN OTHERS THEN
     RETURN jsonb_build_object('error', SQLERRM, 'detail', SQLSTATE);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Define Enums (assumed missing in original SQL)
+CREATE TYPE transaction_type AS ENUM (
+    'invoice',
+    'sales_receipt',
+    'credit_note',
+    'refund_receipt',
+    'estimate'
+);
+
+CREATE TYPE payment_status AS ENUM (
+    'due',
+    'partially_paid',
+    'paid',
+    'overpaid',
+    'void',
+    'canceled'
+);
+
+-- Customers Table
+CREATE TABLE customers (
+    id SERIAL PRIMARY KEY,
+    company_id INTEGER NOT NULL REFERENCES companies(id),
+    name VARCHAR(100) NOT NULL,
+    company VARCHAR(100),
+    email VARCHAR(100),
+    billing_address TEXT,
+    initial_balance DECIMAL(12,2) DEFAULT 0,
+    -- Optional: balance DECIMAL(12,2) DEFAULT 0, -- Uncomment if you want to track balance
+    created_by INTEGER NOT NULL REFERENCES users(id),
+    updated_by INTEGER NOT NULL REFERENCES users(id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Categories Table (unchanged)
+CREATE TABLE categories (
+    id SERIAL PRIMARY KEY,
+    company_id INTEGER NOT NULL REFERENCES companies(id),
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    created_by INTEGER NOT NULL REFERENCES users(id),
+    updated_by INTEGER NOT NULL REFERENCES users(id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Products Table (unchanged)
+CREATE TABLE products (
+    id SERIAL PRIMARY KEY,
+    company_id INTEGER NOT NULL REFERENCES companies(id),
+    category_id INTEGER REFERENCES categories(id),
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    default_unit_price DECIMAL(12,2),
+    primary_unit_of_measure VARCHAR(20) NOT NULL,
+    secondary_unit_of_measure VARCHAR(20),
+    conversion_factor DECIMAL(12,4),
+    default_tax_percent DECIMAL(5,2),
+    created_by INTEGER NOT NULL REFERENCES users(id),
+    updated_by INTEGER NOT NULL REFERENCES users(id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Transactions Table
+CREATE TABLE transactions (
+    id SERIAL PRIMARY KEY,
+    company_id INTEGER NOT NULL REFERENCES companies(id),
+    transaction_number VARCHAR(20) NOT NULL,
+    transaction_type transaction_type NOT NULL,
+    customer_id INTEGER NOT NULL REFERENCES customers(id),
+    sales_rep_id INTEGER REFERENCES users(id),
+    transaction_date DATE NOT NULL,
+    due_date DATE,
+    expiration_date DATE,
+    terms VARCHAR(50),
+    status payment_status DEFAULT 'due',
+    message TEXT,
+    net_total DECIMAL(12,2) NOT NULL DEFAULT 0,
+    tax_total DECIMAL(12,2) NOT NULL DEFAULT 0,
+    other_fees DECIMAL(12,2) NOT NULL DEFAULT 0,
+    gross_total DECIMAL(12,2) NOT NULL DEFAULT 0,
+    parent_transaction_id INTEGER REFERENCES transactions(id),
+    deleted_at TIMESTAMPTZ, -- Added for soft deletes
+    created_by INTEGER NOT NULL REFERENCES users(id),
+    updated_by INTEGER NOT NULL REFERENCES users(id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Transaction Items (unchanged)
+CREATE TABLE transaction_items (
+    id SERIAL PRIMARY KEY,
+    transaction_id INTEGER NOT NULL REFERENCES transactions(id) ON DELETE CASCADE,
+    product_id INTEGER REFERENCES products(id),
+    description TEXT,
+    quantity DECIMAL(12,3) NOT NULL,
+    unit_of_measure VARCHAR(20) NOT NULL,
+    unit_price DECIMAL(12,2) NOT NULL,
+    tax_percent DECIMAL(5,2) NOT NULL,
+    amount DECIMAL(12,2) NOT NULL,
+    created_by INTEGER NOT NULL REFERENCES users(id),
+    updated_by INTEGER NOT NULL REFERENCES users(id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Payments Table (rename amount_to_credit for clarity)
+CREATE TABLE payments (
+    id SERIAL PRIMARY KEY,
+    company_id INTEGER NOT NULL REFERENCES companies(id),
+    payment_number VARCHAR(20) NOT NULL,
+    customer_id INTEGER NOT NULL REFERENCES customers(id),
+    payment_date DATE NOT NULL,
+    amount_received DECIMAL(12,2) NOT NULL,
+    unallocated_amount DECIMAL(12,2) DEFAULT 0, -- Renamed from amount_to_credit
+    message TEXT,
+    created_by INTEGER NOT NULL REFERENCES users(id),
+    updated_by INTEGER NOT NULL REFERENCES users(id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Payment Allocations (unchanged)
+CREATE TABLE payment_allocations (
+    id SERIAL PRIMARY KEY,
+    payment_id INTEGER NOT NULL REFERENCES payments(id) ON DELETE CASCADE,
+    transaction_id INTEGER NOT NULL REFERENCES transactions(id),
+    amount DECIMAL(12,2) NOT NULL,
+    created_by INTEGER NOT NULL REFERENCES users(id),
+    updated_by INTEGER NOT NULL REFERENCES users(id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Activity Log (unchanged)
+CREATE TABLE activity_log (
+    id SERIAL PRIMARY KEY,
+    company_id INTEGER NOT NULL REFERENCES companies(id),
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    activity_type VARCHAR(50) NOT NULL,
+    entity_type VARCHAR(50) NOT NULL,
+    entity_id INTEGER NOT NULL,
+    description TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

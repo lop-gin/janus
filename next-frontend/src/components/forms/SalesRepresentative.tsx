@@ -1,118 +1,45 @@
+"use client";
 
 import React, { useState, useEffect } from "react";
-import { useAuth } from "@/components/auth/AuthProvider";
-import { Label } from "@/components/ui/label";
+import api from "@/lib/api";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { HelpCircle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { SALES_RELATED_ROLES, PROCUREMENT_RELATED_ROLES } from "@/types/roles";
 
 interface SalesRepresentativeProps {
-  representativeType?: "sales" | "procurement";
   value: string;
-  onChange: (value: string) => void;
+  onChange: (rep: string) => void;
 }
 
-interface Employee {
-  id: string;
-  full_name: string;
-  role_name?: string;
-}
-
-export const SalesRepresentative: React.FC<SalesRepresentativeProps> = ({
-  representativeType = "sales",
-  value,
-  onChange
-}) => {
-  const { user, userMetadata } = useAuth();
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [loading, setLoading] = useState(true);
-  
-  const labelText = representativeType === "sales" ? "Sales Rep" : "Procurement Rep";
-  const relevantRoles = representativeType === "sales" ? SALES_RELATED_ROLES : PROCUREMENT_RELATED_ROLES;
+export const SalesRepresentative: React.FC<SalesRepresentativeProps> = ({ value, onChange }) => {
+  const [salesReps, setSalesReps] = useState<{ id: number; name: string }[]>([]);
 
   useEffect(() => {
-    const fetchEmployees = async () => {
-      setLoading(true);
+    const fetchSalesReps = async () => {
       try {
-        // Join profiles with roles to get employees with sales or procurement roles
-        const { data, error } = await supabase
-          .from('profiles')
-          .select(`
-            id,
-            full_name,
-            roles:role_id (
-              name
-            )
-          `)
-          .eq('status', 'active')
-          .order('full_name');
-          
-        if (error) throw error;
-        
-        // Transform and filter employees by relevant roles
-        const formattedEmployees = (data || [])
-          .map(item => ({
-            id: item.id,
-            full_name: item.full_name || 'Unknown',
-            role_name: item.roles?.name
-          }))
-          .filter(emp => 
-            emp.role_name && 
-            relevantRoles.some(role => 
-              emp.role_name?.toLowerCase().includes(role.toLowerCase())
-            )
-          );
-        
-        setEmployees(formattedEmployees);
-        
-        // Set default to current user if they have an appropriate role
-        if (!value && user?.id) {
-          const currentUserInList = formattedEmployees.find(emp => emp.id === user.id);
-          if (currentUserInList) {
-            onChange(currentUserInList.id);
-          }
-        }
+        console.log("Token:", localStorage.getItem("supabase.auth.token"));
+        const response = await api.get("http://127.0.0.1:8000/sales-reps", {
+          headers: { Authorization: `Bearer ${localStorage.getItem("supabase.auth.token")}` },
+        });
+        setSalesReps(response.data);
       } catch (error) {
-        console.error('Error fetching employees:', error);
-      } finally {
-        setLoading(false);
+        console.error("Failed to fetch sales reps", error);
       }
     };
+    fetchSalesReps();
+  }, []);
 
-    fetchEmployees();
-  }, [user, value, onChange, representativeType, relevantRoles]);
-  
   return (
     <div>
-      <div className="flex items-center mb-1">
-        <Label htmlFor="salesRep" className="text-xs font-medium text-gray-600 mr-1">{labelText}</Label>
-        <HelpCircle className="h-3 w-3 text-gray-400" />
-      </div>
-      <Select
-        value={value}
-        onValueChange={onChange}
-        disabled={loading}
-      >
-        <SelectTrigger className="w-full h-9 text-xs">
-          <SelectValue placeholder={`Select ${labelText}`} />
+      <label className="text-xs font-medium text-gray-600 mr-1">Sales Representative</label>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="h-9 text-xs w-full bg-white">
+          <SelectValue placeholder="Select sales representative" />
         </SelectTrigger>
-        <SelectContent>
-          {loading ? (
-            <div className="flex justify-center p-2">
-              <div className="animate-spin h-4 w-4 border-b-2 border-primary rounded-full"></div>
-            </div>
-          ) : employees.length > 0 ? (
-            employees.map(employee => (
-              <SelectItem key={employee.id} value={employee.id}>
-                {employee.full_name}
-              </SelectItem>
-            ))
-          ) : (
-            <div className="p-2 text-sm text-gray-500">
-              No {representativeType} representatives available
-            </div>
-          )}
+        <SelectContent className="bg-white text-gray-700 border-white">
+          {salesReps.map((rep) => (
+            <SelectItem key={rep.id} value={rep.id.toString()}>
+              {rep.name}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
     </div>

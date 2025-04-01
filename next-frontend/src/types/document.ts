@@ -7,11 +7,13 @@ export interface Address {
 }
 
 export interface Customer {
-  id?: string;
+  id?: number;
+  company_id?: number; // Optional since it’s not used in the form
   name: string;
-  email: string;
   company?: string;
-  billingAddress: Address;
+  email?: string;
+  billing_address: Address; // Use Address type
+  initial_balance?: number;
 }
 
 export interface DocumentItem {

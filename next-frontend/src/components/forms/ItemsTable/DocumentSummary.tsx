@@ -1,4 +1,3 @@
-
 import React from "react";
 import { DocumentItem, OtherFees } from "@/types/document";
 import { formatCurrency } from "@/lib/document-utils";

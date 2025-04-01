@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { DocumentItem, OtherFees } from "@/types/document";
 import { Separator } from "@/components/ui/separator";
@@ -25,16 +24,14 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({
   removeItem,
   clearAllItems,
   otherFees,
-  updateOtherFees
+  updateOtherFees,
 }) => {
-  // Track the currently selected row
   const [selectedRow, setSelectedRow] = useState<string | null>(
     items.length > 0 ? items[0].id : null
   );
 
-  // Update selectedRow when items change (e.g., when items are auto-populated)
   useEffect(() => {
-    if (items.length > 0 && !items.some(item => item.id === selectedRow)) {
+    if (items.length > 0 && !items.some((item) => item.id === selectedRow)) {
       setSelectedRow(items[0].id);
     }
   }, [items, selectedRow]);
@@ -61,24 +58,11 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({
           </tbody>
         </table>
       </div>
-      
-      <TableActions 
-        onAddItem={addItem}
-        onClearItems={clearAllItems}
-      />
-      
+      <TableActions onAddItem={addItem} onClearItems={clearAllItems} />
       <Separator className="mt-4 mb-4 w-full bg-gray-300" />
-      
       <div className="flex justify-between mb-8">
-        <OtherFeesComponent 
-          otherFees={otherFees}
-          updateOtherFees={updateOtherFees}
-        />
-        
-        <DocumentSummary 
-          items={items}
-          otherFees={otherFees}
-        />
+        <OtherFeesComponent otherFees={otherFees} updateOtherFees={updateOtherFees} />
+        <DocumentSummary items={items} otherFees={otherFees} />
       </div>
     </div>
   );
