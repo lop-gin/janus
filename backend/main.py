@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from supabase import create_client, Client
 import jwt
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from typing import Optional, List
 from datetime import date
 from fastapi.middleware.cors import CORSMiddleware
@@ -54,17 +54,6 @@ class CustomerCreate(BaseModel):
     billing_address: Address
     initial_balance: Optional[float] = 0
 
-class Product(BaseModel):
-    id: Optional[int] = None
-    company_id: int
-    category_id: Optional[int] = None
-    name: str
-    description: Optional[str] = None
-    default_unit_price: Optional[float] = None
-    primary_unit_of_measure: str
-    secondary_unit_of_measure: Optional[str] = None
-    conversion_factor: Optional[float] = None
-    default_tax_percent: Optional[float] = None
 
 class TransactionItem(BaseModel):
     id: Optional[int] = None
@@ -168,6 +157,88 @@ async def create_customer(customer: CustomerCreate, current_user: str = Depends(
         return created_customer
     raise HTTPException(status_code=400, detail="Failed to create customer")
 
+# Category Endpoint
+class Category(BaseModel):
+    id: Optional[int] = None
+    company_id: int
+    name: str
+    description: Optional[str] = None
+
+
+class CategoryCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+
+    @validator('name')
+    def name_must_not_be_empty(cls, v):
+        if not v.strip():
+            raise ValueError('Name cannot be empty')
+        return v.strip()
+
+@app.get("/categories", response_model=List[Category])
+async def get_categories(current_user: str = Depends(get_current_user)):
+    user_response = supabase.table("users").select("company_id").eq("auth_user_id", current_user).execute()
+    if not user_response.data:
+        raise HTTPException(status_code=404, detail="User not found")
+    company_id = user_response.data[0]["company_id"]
+    response = supabase.table("categories").select("*").eq("company_id", company_id).execute()
+    if response.data:
+        return response.data
+    return []
+
+@app.post("/categories", response_model=Category)
+async def create_category(category: CategoryCreate, current_user: str = Depends(get_current_user)):
+    user_response = supabase.table("users").select("company_id, id").eq("auth_user_id", current_user).execute()
+    if not user_response.data:
+        raise HTTPException(status_code=404, detail="User not found")
+    company_id = user_response.data[0]["company_id"]
+    user_id = user_response.data[0]["id"]
+    category_data = category.dict()
+    category_data["company_id"] = company_id
+    category_data["created_by"] = user_id
+    category_data["updated_by"] = user_id
+    response = supabase.table("categories").insert(category_data).execute()
+    if response.data:
+        return response.data[0]
+    raise HTTPException(status_code=400, detail="Failed to create category")
+
+class Product(BaseModel):
+    id: Optional[int] = None
+    company_id: int
+    category_id: Optional[int] = None
+    name: str
+    sku: Optional[str] = None
+    description: Optional[str] = None
+    primary_unit_of_measure: str
+    secondary_unit_of_measure: Optional[str] = None
+    conversion_factor: Optional[float] = None
+    default_tax_percent: Optional[float] = None
+    initial_quantity: Optional[float] = 0
+    as_of_date: Optional[date] = None
+    reorder_point: Optional[float] = None
+    sale_price: Optional[float] = None
+    purchase_price: Optional[float] = None
+
+class ProductCreate(BaseModel):
+    category_id: Optional[int] = None
+    name: str
+    sku: Optional[str] = None
+    description: Optional[str] = None
+    primary_unit_of_measure: str
+    secondary_unit_of_measure: Optional[str] = None
+    conversion_factor: Optional[float] = None
+    default_tax_percent: Optional[float] = None
+    initial_quantity: Optional[float] = 0
+    as_of_date: Optional[date] = None
+    reorder_point: Optional[float] = None
+    sale_price: Optional[float] = None
+    purchase_price: Optional[float] = None
+    @validator('name')
+    def name_must_not_be_empty(cls, v):
+        if not v.strip():
+            raise ValueError('Name cannot be empty')
+        return v.strip()
+
 # Product Endpoints
 @app.get("/products", response_model=List[Product])
 async def get_products(current_user: str = Depends(get_current_user)):
@@ -181,7 +252,7 @@ async def get_products(current_user: str = Depends(get_current_user)):
     raise HTTPException(status_code=404, detail="No products found")
 
 @app.post("/products", response_model=Product)
-async def create_product(product: Product, current_user: str = Depends(get_current_user)):
+async def create_product(product: ProductCreate, current_user: str = Depends(get_current_user)):
     user_response = supabase.table("users").select("company_id, id").eq("auth_user_id", current_user).execute()
     if not user_response.data:
         raise HTTPException(status_code=404, detail="User not found")
@@ -191,6 +262,16 @@ async def create_product(product: Product, current_user: str = Depends(get_curre
     product_data["company_id"] = company_id
     product_data["created_by"] = user_id
     product_data["updated_by"] = user_id
+    
+    # Debug: Print the product_data to inspect its contents
+    print("product_data before conversion:", product_data)
+    
+    # Convert date objects to strings
+    if "as_of_date" in product_data and isinstance(product_data["as_of_date"], date):
+        product_data["as_of_date"] = product_data["as_of_date"].isoformat()
+    
+    print("product_data after conversion:", product_data)
+    
     response = supabase.table("products").insert(product_data).execute()
     if response.data:
         return response.data[0]

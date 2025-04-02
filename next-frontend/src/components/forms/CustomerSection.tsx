@@ -1,3 +1,4 @@
+// src/components/forms/CustomerSection.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -9,8 +10,7 @@ import { HelpCircle } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
+import { AddCustomerSheet } from "./AddCustomerSheet";
 
 interface CustomerSectionProps {
   customer: {
@@ -18,11 +18,11 @@ interface CustomerSectionProps {
     name: string;
     company?: string;
     email?: string;
-    billingAddress: string; // Change to string
+    billingAddress: string;
     initial_balance?: number;
   };
   document: Document;
-  updateCustomer: (customer: Customer) => void; // Still expects Customer type
+  updateCustomer: (customer: Customer) => void;
   updateDocument: (updates: Partial<Document>) => void;
   onCustomerSelect?: (customerName: string) => void;
 }
@@ -36,22 +36,14 @@ export const CustomerSection: React.FC<CustomerSectionProps> = ({
 }) => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [newCustomer, setNewCustomer] = useState({
-    name: "",
-    company: "",
-    email: "",
-    billing_address: { street: "", city: "", state: "", zipCode: "", country: "" },
-    initial_balance: 0,
-  });
 
-  const formatBillingAddress = (address: Address): string => {
+  const formatBillingAddress = (address: { street: string; city: string; state: string; zipCode: string; country: string }): string => {
     return `${address.street}, ${address.city}, ${address.state} ${address.zipCode}, ${address.country}`;
-  };  
+  };
 
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        console.log("Token:", localStorage.getItem("supabase.auth.token"));
         const response = await api.get("http://127.0.0.1:8000/customers", {
           headers: { Authorization: `Bearer ${localStorage.getItem("supabase.auth.token")}` },
         });
@@ -65,15 +57,7 @@ export const CustomerSection: React.FC<CustomerSectionProps> = ({
 
   const handleCustomerChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    if (name.startsWith("billing.")) {
-      const billingField = name.replace("billing.", "");
-      updateCustomer({
-        ...customer,
-        billingAddress: { ...customer.billingAddress, [billingField]: value },
-      });
-    } else {
-      updateCustomer({ ...customer, [name]: value });
-    }
+    updateCustomer({ ...customer, [name]: value });
   };
 
   const handleCustomerSelect = (value: string) => {
@@ -89,34 +73,23 @@ export const CustomerSection: React.FC<CustomerSectionProps> = ({
           name: selected.name,
           company: selected.company || "",
           email: selected.email || "",
-          billingAddress: billingAddressString, // Set as string
+          billingAddress: billingAddressString,
         });
         if (onCustomerSelect) onCustomerSelect(selected.name);
       }
     }
   };
 
-  const handleAddNewCustomer = async () => {
-    try {
-      const response = await api.post(
-        "http://127.0.0.1:8000/customers",
-        { ...newCustomer }, // company_id, created_by, updated_by set by backend
-        { headers: { Authorization: `Bearer ${localStorage.getItem("supabase.auth.token")}` } }
-      );
-      const addedCustomer = response.data;
-      setCustomers([...customers, addedCustomer]);
-      setIsSheetOpen(false);
-      handleCustomerSelect(addedCustomer.id.toString());
-      setNewCustomer({
-        name: "",
-        company: "",
-        email: "",
-        billing_address: { street: "", city: "", state: "", zipCode: "", country: "" },
-        initial_balance: 0,
-      });
-    } catch (error) {
-      console.error("Failed to add customer", error);
-    }
+  const handleCustomerAdded = (addedCustomer: {
+    id: number;
+    name: string;
+    company?: string;
+    email?: string;
+    billing_address: { street: string; city: string; state: string; zipCode: string; country: string };
+    initial_balance: number;
+  }) => {
+    setCustomers([...customers, addedCustomer]);
+    handleCustomerSelect(addedCustomer.id.toString());
   };
 
   return (
@@ -160,7 +133,7 @@ export const CustomerSection: React.FC<CustomerSectionProps> = ({
             name="email"
             type="email"
             className="w-full h-9 text-xs"
-            value={customer.email}
+            value={customer.email || ""}
             onChange={handleCustomerChange}
             placeholder="Separate emails with a comma"
           />
@@ -177,121 +150,11 @@ export const CustomerSection: React.FC<CustomerSectionProps> = ({
         </div>
       </div>
       <Separator className="mt-5 mb-0 w-full bg-gray-200" />
-
-      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <SheetContent side="right" className="w-1/2 p-6">
-          <SheetHeader>
-            <SheetTitle>Add New Customer</SheetTitle>
-            <SheetDescription>Enter the customer details below.</SheetDescription>
-          </SheetHeader>
-          <div className="space-y-4 mt-4">
-            <div>
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                placeholder="Name"
-                value={newCustomer.name}
-                onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="company">Company</Label>
-              <Input
-                id="company"
-                placeholder="Company"
-                value={newCustomer.company}
-                onChange={(e) => setNewCustomer({ ...newCustomer, company: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                placeholder="Email"
-                value={newCustomer.email}
-                onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="street">Street</Label>
-              <Input
-                id="street"
-                value={newCustomer.billing_address.street}
-                onChange={(e) =>
-                  setNewCustomer({
-                    ...newCustomer,
-                    billing_address: { ...newCustomer.billing_address, street: e.target.value },
-                  })
-                }
-              />
-            </div>
-            <div>
-              <Label htmlFor="city">City</Label>
-              <Input
-                id="city"
-                value={newCustomer.billing_address.city}
-                onChange={(e) =>
-                  setNewCustomer({
-                    ...newCustomer,
-                    billing_address: { ...newCustomer.billing_address, city: e.target.value },
-                  })
-                }
-              />
-            </div>
-            <div>
-              <Label htmlFor="state">State</Label>
-              <Input
-                id="state"
-                value={newCustomer.billing_address.state}
-                onChange={(e) =>
-                  setNewCustomer({
-                    ...newCustomer,
-                    billing_address: { ...newCustomer.billing_address, state: e.target.value },
-                  })
-                }
-              />
-            </div>
-            <div>
-              <Label htmlFor="zipCode">Zip Code</Label>
-              <Input
-                id="zipCode"
-                value={newCustomer.billing_address.zipCode}
-                onChange={(e) =>
-                  setNewCustomer({
-                    ...newCustomer,
-                    billing_address: { ...newCustomer.billing_address, zipCode: e.target.value },
-                  })
-                }
-              />
-            </div>
-            <div>
-              <Label htmlFor="country">Country</Label>
-              <Input
-                id="country"
-                value={newCustomer.billing_address.country}
-                onChange={(e) =>
-                  setNewCustomer({
-                    ...newCustomer,
-                    billing_address: { ...newCustomer.billing_address, country: e.target.value },
-                  })
-                }
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="initial_balance">Initial Balance</Label>
-              <Input
-                id="initial_balance"
-                type="number"
-                placeholder="Initial Balance"
-                value={newCustomer.initial_balance}
-                onChange={(e) => setNewCustomer({ ...newCustomer, initial_balance: parseFloat(e.target.value) || 0 })}
-              />
-            </div>
-            <Button onClick={handleAddNewCustomer}>Save</Button>
-          </div>
-        </SheetContent>
-      </Sheet>
+      <AddCustomerSheet
+        isOpen={isSheetOpen}
+        onOpenChange={setIsSheetOpen}
+        onCustomerAdded={handleCustomerAdded}
+      />
     </div>
   );
 };

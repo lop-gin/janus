@@ -227,18 +227,23 @@ CREATE TABLE categories (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Products Table (unchanged)
+-- Products Table
 CREATE TABLE products (
     id SERIAL PRIMARY KEY,
     company_id INTEGER NOT NULL REFERENCES companies(id),
     category_id INTEGER REFERENCES categories(id),
     name VARCHAR(100) NOT NULL,
+    sku VARCHAR(50),
     description TEXT,
-    default_unit_price DECIMAL(12,2),
     primary_unit_of_measure VARCHAR(20) NOT NULL,
     secondary_unit_of_measure VARCHAR(20),
     conversion_factor DECIMAL(12,4),
     default_tax_percent DECIMAL(5,2),
+    initial_quantity DECIMAL(12,3) DEFAULT 0,
+    as_of_date DATE,
+    reorder_point DECIMAL(12,3),
+    sale_price DECIMAL(12,2),
+    purchase_price DECIMAL(12,2),
     created_by INTEGER NOT NULL REFERENCES users(id),
     updated_by INTEGER NOT NULL REFERENCES users(id),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
