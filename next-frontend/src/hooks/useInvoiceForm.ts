@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import api from "@/lib/api"; // Replace axios with api for consistency
 import { InvoiceType, DocumentItem, Customer } from "@/types/document";
 
 export const useInvoiceForm = () => {
@@ -7,7 +7,7 @@ export const useInvoiceForm = () => {
     name: "",
     email: "",
     company: "",
-    billingAddress: { street: "", city: "", state: "", zipCode: "", country: "" },
+    billing_address: { street: "", city: "", state: "", zipCode: "", country: "" }, // Match document.ts
   };
 
   const [invoice, setInvoice] = useState<InvoiceType>({
@@ -36,7 +36,7 @@ export const useInvoiceForm = () => {
 
   const addInvoiceItem = () => {
     const newItem: DocumentItem = {
-      id: Date.now().toString(),
+      id: Date.now().toString(), // Unique string ID
       product: "",
       description: "",
       quantity: 1,
@@ -48,19 +48,21 @@ export const useInvoiceForm = () => {
     setInvoice((prev) => ({ ...prev, items: [...prev.items, newItem] }));
   };
 
-  const updateInvoiceItem = (index: number, updates: Partial<DocumentItem>) => {
+  const updateInvoiceItem = (itemId: string, updates: Partial<DocumentItem>) => {
     setInvoice((prev) => {
-      const items = [...prev.items];
-      items[index] = { ...items[index], ...updates };
+      const items = prev.items.map((item) =>
+        item.id === itemId ? { ...item, ...updates } : item
+      );
       const subTotal = items.reduce((sum, item) => sum + (item.amount || 0), 0);
       const total = subTotal + (prev.otherFees?.amount || 0);
+      console.log("New items state:", items);
       return { ...prev, items, subTotal, total, balanceDue: total };
     });
   };
 
-  const removeInvoiceItem = (index: number) => {
+  const removeInvoiceItem = (itemId: string) => {
     setInvoice((prev) => {
-      const items = prev.items.filter((_, i) => i !== index);
+      const items = prev.items.filter((item) => item.id !== itemId);
       const subTotal = items.reduce((sum, item) => sum + (item.amount || 0), 0);
       const total = subTotal + (prev.otherFees?.amount || 0);
       return { ...prev, items, subTotal, total, balanceDue: total };
@@ -68,7 +70,13 @@ export const useInvoiceForm = () => {
   };
 
   const clearAllItems = () => {
-    setInvoice((prev) => ({ ...prev, items: [], subTotal: 0, total: prev.otherFees?.amount || 0, balanceDue: prev.otherFees?.amount || 0 }));
+    setInvoice((prev) => ({
+      ...prev,
+      items: [],
+      subTotal: 0,
+      total: prev.otherFees?.amount || 0,
+      balanceDue: prev.otherFees?.amount || 0,
+    }));
   };
 
   const updateTerms = (terms: string) => {
@@ -118,7 +126,10 @@ export const useInvoiceForm = () => {
         status: "due",
         message: invoice.messageOnInvoice,
         net_total: invoice.subTotal,
-        tax_total: invoice.items.reduce((sum, item) => sum + (item.taxPercent || 0) * (item.amount || 0) / 100, 0),
+        tax_total: invoice.items.reduce(
+          (sum, item) => sum + ((item.taxPercent || 0) * (item.amount || 0)) / 100,
+          0
+        ),
         other_fees: invoice.otherFees?.amount || 0,
         gross_total: invoice.total,
         items: invoice.items.map((item) => ({
@@ -131,9 +142,7 @@ export const useInvoiceForm = () => {
           amount: item.amount || 0,
         })),
       };
-      const response = await axios.post("http://127.0.0.1:8000/invoices", invoiceData, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("supabase.auth.token")}` },
-      });
+      const response = await api.post("http://127.0.0.1:8000/invoices", invoiceData);
       console.log("Invoice saved:", response.data);
       return true;
     } catch (error) {

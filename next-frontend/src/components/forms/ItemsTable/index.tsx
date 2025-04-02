@@ -51,7 +51,10 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({
                 index={index}
                 isSelected={selectedRow === item.id}
                 onSelect={() => setSelectedRow(item.id)}
-                onUpdate={(updates) => updateItem(item.id, updates)}
+                onUpdate={(updates) => {
+                  console.log(`Updating item ${item.id} with:`, updates);
+                  updateItem(item.id, updates);
+                }}
                 onRemove={() => removeItem(item.id)}
               />
             ))}

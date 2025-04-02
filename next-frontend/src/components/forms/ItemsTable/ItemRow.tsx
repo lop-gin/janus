@@ -31,6 +31,12 @@ interface Product {
   category_id: number | null;
 }
 
+interface Category {
+  id: number;
+  name: string;
+  description: string | null;
+}
+
 export const ItemRow: React.FC<ItemRowProps> = ({
   item,
   index,
@@ -40,22 +46,31 @@ export const ItemRow: React.FC<ItemRowProps> = ({
   onRemove,
 }) => {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchData = async () => {
       try {
-        const response = await api.get("http://127.0.0.1:8000/products", {
-          headers: { Authorization: `Bearer ${localStorage.getItem("supabase.auth.token")}` },
-        });
-        setProducts(response.data);
+        const [productsResponse, categoriesResponse] = await Promise.all([
+          api.get("http://127.0.0.1:8000/products", {
+            headers: { Authorization: `Bearer ${localStorage.getItem("supabase.auth.token")}` },
+          }),
+          api.get("http://127.0.0.1:8000/categories", {
+            headers: { Authorization: `Bearer ${localStorage.getItem("supabase.auth.token")}` },
+          }),
+        ]);
+        setProducts(productsResponse.data);
+        setCategories(categoriesResponse.data);
       } catch (error) {
-        console.error("Failed to fetch products", error);
+        console.error("Failed to fetch data", error);
       }
     };
-    fetchProducts();
+    fetchData();
   }, []);
 
+  // Calculate selected category and product for display
+  const selectedCategory = categories.find((cat) => cat.id.toString() === item.category);
   const selectedProduct = products.find((p) => p.id.toString() === item.product);
 
   const handleProductChange = (value: string) => {
@@ -64,13 +79,14 @@ export const ItemRow: React.FC<ItemRowProps> = ({
     } else {
       const product = products.find((p) => p.id.toString() === value);
       if (product) {
-        onUpdate({
+        const updates = {
           product: value,
           unit: product.primary_unit_of_measure,
-          unitPrice: product.sale_price || 0,
           taxPercent: product.default_tax_percent || 0,
-          amount: (item.quantity || 1) * (product.sale_price || 0),
-        });
+          customerproduct: product.name, // Autopopulate with product name
+          // Do not set unitPrice or amount
+        };
+        onUpdate(updates);
       }
     }
   };
@@ -90,13 +106,25 @@ export const ItemRow: React.FC<ItemRowProps> = ({
       ].filter(Boolean)
     : [];
 
-  const categoryOptions = []; // Fetch if needed
+  const categoryOptions = categories.map((cat) => ({
+    value: cat.id.toString(),
+    label: cat.name,
+  }));
+
+  const filteredProducts = item.category
+    ? products.filter((p) => p.category_id?.toString() === item.category)
+    : products;
+
+  console.log("Row", index, "isSelected:", isSelected); 
 
   return (
     <>
       <tr
-        className={cn("border-b hover:bg-gray-50 transition-colors", isSelected ? "bg-blue-50" : "")}
-        onClick={onSelect}
+        className={cn("border-b hover:bg-gray-50 transition-colors", isSelected ? "bg-blue-100" : "")}
+        onClick={() => {
+          console.log("Row", index, "clicked");
+          onSelect();
+        }}
       >
         <IndexCell index={index} />
         <td className="py-1 px-0.5 border-r border-gray-300 text-black">
@@ -106,6 +134,7 @@ export const ItemRow: React.FC<ItemRowProps> = ({
             options={categoryOptions}
             isEditing={isSelected}
             onFocus={onSelect}
+            displayValue={selectedCategory?.name || ""} // Pass category name
           />
         </td>
         <td className="py-1 px-0.5 border-r border-gray-300 text-black">
@@ -114,10 +143,11 @@ export const ItemRow: React.FC<ItemRowProps> = ({
             onChange={handleProductChange}
             options={[
               { value: "add-new", label: "Add New" },
-              ...products.map((p) => ({ value: p.id.toString(), label: p.name })),
+              ...filteredProducts.map((p) => ({ value: p.id.toString(), label: p.name })),
             ]}
             isEditing={isSelected}
-            onFocus={onSelect}
+            onFocus={() => onSelect}
+            displayValue={selectedProduct?.name || ""} // Pass product name
           />
         </td>
         <td className="py-1 px-0.5 border-r border-gray-300 text-black">

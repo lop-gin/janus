@@ -1,11 +1,10 @@
-
 import React from "react";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "@/components/ui/select";
 
 interface SelectCellProps {
@@ -13,7 +12,8 @@ interface SelectCellProps {
   onChange: (value: string) => void;
   options: { value: string; label: string }[];
   isEditing: boolean;
-  onFocus?: (e: React.MouseEvent) => void;
+  onFocus?: () => void;
+  displayValue?: string; // New prop for displaying the label when not editing
 }
 
 export const SelectCell: React.FC<SelectCellProps> = ({
@@ -21,10 +21,13 @@ export const SelectCell: React.FC<SelectCellProps> = ({
   onChange,
   options,
   isEditing,
-  onFocus
+  onFocus,
+  displayValue,
 }) => {
   if (!isEditing) {
-    return <div className="py-1 px-1 text-left">{value || ''}</div>;
+    // Use displayValue if provided, otherwise find the label from options, fallback to value
+    const displayText = displayValue || options.find((opt) => opt.value === value)?.label || value || '';
+    return <div className="py-1 px-1 text-left">{displayText}</div>;
   }
 
   return (

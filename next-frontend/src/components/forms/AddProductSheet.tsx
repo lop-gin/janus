@@ -125,123 +125,152 @@ export const AddProductSheet: React.FC<AddProductSheetProps> = ({
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-1/3 p-6 bg-white">
-        <SheetHeader>
-          <SheetTitle>Add New Product</SheetTitle>
-          <SheetDescription>Enter the product details below.</SheetDescription>
+      <SheetContent className="w-[600px] max-w-[50%] p-6 overflow-y-auto bg-white">
+        <SheetHeader className="mb-6">
+          <SheetTitle className="text-2xl font-bold text-gray-900">Add New Product</SheetTitle>
+          <SheetDescription className="text-gray-700">Enter the product details below.</SheetDescription>
         </SheetHeader>
-        <div className="space-y-4 mt-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor="name">Product Name *</Label>
-              <Input
-                id="name"
-                value={newProduct.name}
-                onChange={(e) => handleInputChange("name", e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="sku">SKU</Label>
-              <Input
-                id="sku"
-                value={newProduct.sku}
-                onChange={(e) => handleInputChange("sku", e.target.value)}
-              />
-            </div>
-          </div>
+        
+        {/* Basic Information Section */}
+        <div className="space-y-5">
           <div>
-            <Label htmlFor="category">Category</Label>
-            <Select
-              onValueChange={(value) => {
-                if (value === "add-new") setIsCategoryPopupOpen(true);
-                else handleInputChange("category_id", parseInt(value));
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="add-new">Add New</SelectItem>
-                {categories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id.toString()}>{cat.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {isCategoryPopupOpen && (
-              <div className="mt-2 p-3 border rounded">
+            <h3 className="text-md font-medium mb-3 text-gray-900">Basic Information</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="name" className="text-sm font-medium text-gray-700">Product Name *</Label>
                 <Input
-                  placeholder="Category Name"
-                  value={newCategory.name}
-                  onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
+                  id="name"
+                  className="mt-1"
+                  value={newProduct.name}
+                  onChange={(e) => handleInputChange("name", e.target.value)}
                 />
-                <Input
-                  className="mt-2"
-                  placeholder="Description"
-                  value={newCategory.description}
-                  onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
-                />
-                <div className="mt-2 flex gap-2">
-                  <Button onClick={handleAddCategory}>Save</Button>
-                  <Button variant="outline" onClick={() => setIsCategoryPopupOpen(false)}>Cancel</Button>
-                </div>
               </div>
-            )}
+              <div>
+                <Label htmlFor="sku" className="text-sm font-medium text-gray-700">SKU</Label>
+                <Input
+                  id="sku"
+                  className="mt-1"
+                  value={newProduct.sku}
+                  onChange={(e) => handleInputChange("sku", e.target.value)}
+                />
+              </div>
+            </div>
+            
+            <div className="mt-3">
+              <Label htmlFor="category" className="text-sm font-medium text-gray-700">Category</Label>
+              <Select
+                onValueChange={(value) => {
+                  if (value === "add-new") setIsCategoryPopupOpen(true);
+                  else handleInputChange("category_id", parseInt(value));
+                }}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="add-new">Add New</SelectItem>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id.toString()}>{cat.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              {isCategoryPopupOpen && (
+                <div className="mt-3 p-4 border border-gray-200 rounded-md bg-gray-50">
+                  <h4 className="text-sm font-medium mb-2 text-gray-800">New Category</h4>
+                  <Input
+                    placeholder="Category Name"
+                    value={newCategory.name}
+                    onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
+                  />
+                  <Input
+                    className="mt-2"
+                    placeholder="Description"
+                    value={newCategory.description}
+                    onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
+                  />
+                  <div className="mt-3 flex gap-2">
+                    <Button onClick={handleAddCategory} size="sm">Save</Button>
+                    <Button variant="outline" size="sm" onClick={() => setIsCategoryPopupOpen(false)}>Cancel</Button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-          <Separator />
+          
+          <Separator className="my-5 bg-gray-200" />
+          
+          {/* Units of Measure Section */}
           <div>
-            <div className="flex items-center gap-2">
-              <Label htmlFor="primary_unit_of_measure">Primary Unit *</Label>
-              <Popover>
-                <PopoverTrigger><HelpCircle className="h-4 w-4 text-gray-400" /></PopoverTrigger>
-                <PopoverContent>
-                  The primary unit is the main unit of measure for this product (e.g., "ea" for each).
-                </PopoverContent>
-              </Popover>
-            </div>
-            <Input
-              id="primary_unit_of_measure"
-              value={newProduct.primary_unit_of_measure}
-              onChange={(e) => handleInputChange("primary_unit_of_measure", e.target.value)}
-            />
-            <div className="flex items-center gap-2 mt-2">
-              <Label htmlFor="secondary_unit_of_measure">Secondary Unit</Label>
-              <Popover>
-                <PopoverTrigger><HelpCircle className="h-4 w-4 text-gray-400" /></PopoverTrigger>
-                <PopoverContent>
-                  The secondary unit is an optional alternative unit (e.g., "box" if primary is "ea").
-                </PopoverContent>
-              </Popover>
-            </div>
-            <Input
-              id="secondary_unit_of_measure"
-              value={newProduct.secondary_unit_of_measure}
-              onChange={(e) => handleInputChange("secondary_unit_of_measure", e.target.value)}
-            />
-            {newProduct.secondary_unit_of_measure && (
-              <div className="flex items-center gap-2 mt-2">
-                <Label htmlFor="conversion_factor">Conversion Factor *</Label>
+            <h3 className="text-md font-medium mb-3 text-gray-900">Units of Measure</h3>
+            
+            <div className="mb-3">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="primary_unit_of_measure" className="text-sm font-medium text-gray-700">Primary Unit *</Label>
                 <Popover>
-                  <PopoverTrigger><HelpCircle className="h-4 w-4 text-gray-400" /></PopoverTrigger>
+                  <PopoverTrigger><HelpCircle className="h-4 w-4 text-gray-500" /></PopoverTrigger>
                   <PopoverContent>
-                    The number of primary units that make up one secondary unit (e.g., 10 ea = 1 box, enter 10).
+                    The primary unit is the main unit of measure for this product (e.g., "ea" for each).
                   </PopoverContent>
                 </Popover>
               </div>
-            )}
-            {newProduct.secondary_unit_of_measure && (
               <Input
-                id="conversion_factor"
-                type="number"
-                value={newProduct.conversion_factor}
-                onChange={(e) => handleInputChange("conversion_factor", parseFloat(e.target.value) || 1)}
+                id="primary_unit_of_measure"
+                className="mt-1"
+                value={newProduct.primary_unit_of_measure}
+                onChange={(e) => handleInputChange("primary_unit_of_measure", e.target.value)}
               />
+            </div>
+            
+            <div className="mb-3">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="secondary_unit_of_measure" className="text-sm font-medium text-gray-700">Secondary Unit</Label>
+                <Popover>
+                  <PopoverTrigger><HelpCircle className="h-4 w-4 text-gray-500" /></PopoverTrigger>
+                  <PopoverContent>
+                    The secondary unit is an optional alternative unit (e.g., "box" if primary is "ea").
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <Input
+                id="secondary_unit_of_measure"
+                className="mt-1"
+                value={newProduct.secondary_unit_of_measure}
+                onChange={(e) => handleInputChange("secondary_unit_of_measure", e.target.value)}
+              />
+            </div>
+            
+            {newProduct.secondary_unit_of_measure && (
+              <div>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="conversion_factor" className="text-sm font-medium text-gray-700">Conversion Factor *</Label>
+                  <Popover>
+                    <PopoverTrigger><HelpCircle className="h-4 w-4 text-gray-500" /></PopoverTrigger>
+                    <PopoverContent>
+                      The number of primary units that make up one secondary unit (e.g., 10 ea = 1 box, enter 10).
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <Input
+                  id="conversion_factor"
+                  type="number"
+                  className="mt-1"
+                  value={newProduct.conversion_factor}
+                  onChange={(e) => handleInputChange("conversion_factor", parseFloat(e.target.value) || 1)}
+                />
+              </div>
             )}
           </div>
-          <Separator />
+          
+          <Separator className="my-5 bg-gray-200" />
+          
+          {/* Quantity & Pricing Section */}
           <div>
-            <Label>Quantity & Pricing</Label>
+            <h3 className="text-md font-medium mb-3 text-gray-900">Quantity & Pricing</h3>
+            
+            <Label className="text-sm font-medium text-gray-700">Select Unit</Label>
             <Select onValueChange={setSelectedUnit} defaultValue="primary">
-              <SelectTrigger>
+              <SelectTrigger className="mt-1 mb-3">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -250,53 +279,64 @@ export const AddProductSheet: React.FC<AddProductSheetProps> = ({
                 ))}
               </SelectContent>
             </Select>
-            <div className="mt-2">
-              <Label htmlFor="initial_quantity">Initial Quantity</Label>
-              <Input
-                id="initial_quantity"
-                type="number"
-                value={newProduct.initial_quantity}
-                onChange={(e) => handleInputChange("initial_quantity", parseFloat(e.target.value) || 0)}
-              />
-            </div>
-            <div className="mt-2">
-              <Label htmlFor="as_of_date">As of Date</Label>
-              <Input
-                id="as_of_date"
-                type="date"
-                value={newProduct.as_of_date}
-                onChange={(e) => handleInputChange("as_of_date", e.target.value)}
-              />
-            </div>
-            <div className="mt-2">
-              <Label htmlFor="reorder_point">Reorder Point</Label>
-              <Input
-                id="reorder_point"
-                type="number"
-                value={newProduct.reorder_point}
-                onChange={(e) => handleInputChange("reorder_point", e.target.value)}
-              />
-            </div>
-            <div className="mt-2">
-              <Label htmlFor="sale_price">Sale Price</Label>
-              <Input
-                id="sale_price"
-                type="number"
-                value={newProduct.sale_price}
-                onChange={(e) => handleInputChange("sale_price", e.target.value)}
-              />
-            </div>
-            <div className="mt-2">
-              <Label htmlFor="purchase_price">Purchase Price</Label>
-              <Input
-                id="purchase_price"
-                type="number"
-                value={newProduct.purchase_price}
-                onChange={(e) => handleInputChange("purchase_price", e.target.value)}
-              />
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="initial_quantity" className="text-sm font-medium text-gray-700">Initial Quantity</Label>
+                <Input
+                  id="initial_quantity"
+                  type="number"
+                  className="mt-1"
+                  value={newProduct.initial_quantity}
+                  onChange={(e) => handleInputChange("initial_quantity", parseFloat(e.target.value) || 0)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="as_of_date" className="text-sm font-medium text-gray-700">As of Date</Label>
+                <Input
+                  id="as_of_date"
+                  type="date"
+                  className="mt-1"
+                  value={newProduct.as_of_date}
+                  onChange={(e) => handleInputChange("as_of_date", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="reorder_point" className="text-sm font-medium text-gray-700">Reorder Point</Label>
+                <Input
+                  id="reorder_point"
+                  type="number"
+                  className="mt-1"
+                  value={newProduct.reorder_point}
+                  onChange={(e) => handleInputChange("reorder_point", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="sale_price" className="text-sm font-medium text-gray-700">Sale Price</Label>
+                <Input
+                  id="sale_price"
+                  type="number"
+                  className="mt-1"
+                  value={newProduct.sale_price}
+                  onChange={(e) => handleInputChange("sale_price", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="purchase_price" className="text-sm font-medium text-gray-700">Purchase Price</Label>
+                <Input
+                  id="purchase_price"
+                  type="number"
+                  className="mt-1"
+                  value={newProduct.purchase_price}
+                  onChange={(e) => handleInputChange("purchase_price", e.target.value)}
+                />
+              </div>
             </div>
           </div>
-          <Button onClick={handleAddNewProduct}>Save</Button>
+          
+          <div className="pt-4">
+            <Button onClick={handleAddNewProduct} className="w-full">Save Product</Button>
+          </div>
         </div>
       </SheetContent>
     </Sheet>
