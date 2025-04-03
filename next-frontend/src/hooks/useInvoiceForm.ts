@@ -1,17 +1,21 @@
 import { useState } from "react";
-import api from "@/lib/api"; // Replace axios with api for consistency
+import api from "@/lib/api";
 import { InvoiceType, DocumentItem, Customer } from "@/types/document";
 
+/**
+ * Custom hook to manage invoice form state and operations.
+ * Provides functions to update invoice data, manage items, and save to the backend.
+ */
 export const useInvoiceForm = () => {
   const initialCustomer: Customer = {
     name: "",
     email: "",
     company: "",
-    billing_address: { street: "", city: "", state: "", zipCode: "", country: "" }, // Match document.ts
+    billing_address: { street: "", city: "", state: "", zipCode: "", country: "" },
   };
 
   const [invoice, setInvoice] = useState<InvoiceType>({
-    invoiceNumber: `INV-${Date.now()}`, // Temporary number
+    invoiceNumber: `INV-${Date.now()}`,
     invoiceDate: new Date(),
     dueDate: new Date(),
     terms: "Due on receipt",
@@ -26,17 +30,20 @@ export const useInvoiceForm = () => {
     otherFees: { description: "", amount: 0 },
   });
 
+  // Update top-level invoice properties
   const updateInvoice = (updates: Partial<InvoiceType>) => {
     setInvoice((prev) => ({ ...prev, ...updates }));
   };
 
+  // Update customer details
   const updateCustomer = (customer: Customer) => {
     setInvoice((prev) => ({ ...prev, customer }));
   };
 
+  // Add a new item to the invoice
   const addInvoiceItem = () => {
     const newItem: DocumentItem = {
-      id: Date.now().toString(), // Unique string ID
+      id: Date.now().toString(),
       product: "",
       description: "",
       quantity: 1,
@@ -48,6 +55,7 @@ export const useInvoiceForm = () => {
     setInvoice((prev) => ({ ...prev, items: [...prev.items, newItem] }));
   };
 
+  // Update an existing item and recalculate totals
   const updateInvoiceItem = (itemId: string, updates: Partial<DocumentItem>) => {
     setInvoice((prev) => {
       const items = prev.items.map((item) =>
@@ -55,11 +63,11 @@ export const useInvoiceForm = () => {
       );
       const subTotal = items.reduce((sum, item) => sum + (item.amount || 0), 0);
       const total = subTotal + (prev.otherFees?.amount || 0);
-      console.log("New items state:", items);
       return { ...prev, items, subTotal, total, balanceDue: total };
     });
   };
 
+  // Remove an item and recalculate totals
   const removeInvoiceItem = (itemId: string) => {
     setInvoice((prev) => {
       const items = prev.items.filter((item) => item.id !== itemId);
@@ -69,6 +77,7 @@ export const useInvoiceForm = () => {
     });
   };
 
+  // Clear all items and reset totals
   const clearAllItems = () => {
     setInvoice((prev) => ({
       ...prev,
@@ -79,32 +88,29 @@ export const useInvoiceForm = () => {
     }));
   };
 
+  // Update terms and adjust due date accordingly
   const updateTerms = (terms: string) => {
-    let dueDate = invoice.dueDate;
+    let dueDate = new Date(invoice.invoiceDate);
     switch (terms) {
       case "Due on receipt":
-        dueDate = invoice.invoiceDate;
-        break;
+        break; // Due date is same as invoice date
       case "Net 15":
-        dueDate = new Date(invoice.invoiceDate);
         dueDate.setDate(dueDate.getDate() + 15);
         break;
       case "Net 30":
-        dueDate = new Date(invoice.invoiceDate);
         dueDate.setDate(dueDate.getDate() + 30);
         break;
       case "Net 45":
-        dueDate = new Date(invoice.invoiceDate);
         dueDate.setDate(dueDate.getDate() + 45);
         break;
       case "Net 60":
-        dueDate = new Date(invoice.invoiceDate);
         dueDate.setDate(dueDate.getDate() + 60);
         break;
     }
     setInvoice((prev) => ({ ...prev, terms, dueDate }));
   };
 
+  // Update other fees and recalculate total
   const updateOtherFees = (otherFees: { description: string; amount?: number }) => {
     const amount = otherFees.amount || 0;
     setInvoice((prev) => {
@@ -113,6 +119,7 @@ export const useInvoiceForm = () => {
     });
   };
 
+  // Save invoice to the backend
   const saveInvoice = async () => {
     try {
       const invoiceData = {
@@ -146,11 +153,12 @@ export const useInvoiceForm = () => {
       console.log("Invoice saved:", response.data);
       return true;
     } catch (error) {
-      console.error("Failed to save invoice", error);
+      console.error("Failed to save invoice:", error);
       return false;
     }
   };
 
+  // Reset the form to initial state
   const clearForm = () => {
     setInvoice({
       invoiceNumber: `INV-${Date.now()}`,

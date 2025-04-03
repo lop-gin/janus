@@ -14,6 +14,10 @@ import { FormHeader } from "@/components/forms/FormHeader";
 import { FormFooter } from "@/components/forms/FormFooter";
 import { useRouter } from "next/navigation";
 
+/**
+ * InvoicePage component renders the main invoice creation form.
+ * Manages loading state and navigation after save actions.
+ */
 export default function InvoicePage() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -31,16 +35,19 @@ export default function InvoicePage() {
     clearForm,
   } = useInvoiceForm();
 
+  // Simulate loading delay (replace with actual data fetch if needed)
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 1500);
     return () => clearTimeout(timer);
   }, []);
 
+  // Save invoice and redirect to dashboard
   const handleSaveAndClose = async () => {
     const success = await saveInvoice();
     if (success) router.push("/dashboard");
   };
 
+  // Save invoice and reset form for a new entry
   const handleSaveAndNew = async () => {
     const success = await saveInvoice();
     if (success) clearForm();
@@ -48,9 +55,11 @@ export default function InvoicePage() {
 
   return (
     <>
-      <AnimatePresence>{loading && <PageLoader message="Preparing invoice form..." />}</AnimatePresence>
-      <div className="bg-gray-50 min-h-screen w-full">
-        <div className="bg-transparent">
+      <AnimatePresence>
+        {loading && <PageLoader message="Preparing invoice form..." />}
+      </AnimatePresence>
+      {!loading && (
+        <div className="bg-gray-50 min-h-screen w-full">
           <FormHeader title="Invoice" />
           <div className="p-4 pb-17">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -65,12 +74,12 @@ export default function InvoicePage() {
                   <div className="space-y-3 pb-5">
                     <div className="grid grid-cols-2 gap-3">
                       <DateField
-                        label="Invoice date"
+                        label="Invoice Date"
                         date={invoice.invoiceDate}
                         onDateChange={(date) => updateInvoice({ invoiceDate: date })}
                       />
                       <DateField
-                        label="Due date"
+                        label="Due Date"
                         date={invoice.dueDate}
                         onDateChange={(date) => updateInvoice({ dueDate: date })}
                       />
@@ -96,13 +105,13 @@ export default function InvoicePage() {
                 updateItem={updateInvoiceItem}
                 removeItem={removeInvoiceItem}
                 clearAllItems={clearAllItems}
-                otherFees={invoice.otherFees || { description: "", amount: undefined }}
+                otherFees={invoice.otherFees || { description: "", amount: 0 }}
                 updateOtherFees={updateOtherFees}
               />
             </div>
             <FormMessage
               message={invoice.messageOnInvoice}
-              label="MESSAGE ON INVOICE"
+              label="Message on Invoice"
               onChange={(message) => updateInvoice({ messageOnInvoice: message })}
               placeholder="Enter a message to be displayed on the invoice"
             />
@@ -113,7 +122,7 @@ export default function InvoicePage() {
             onSaveAndNew={handleSaveAndNew}
           />
         </div>
-      </div>
+      )}
     </>
   );
 }
