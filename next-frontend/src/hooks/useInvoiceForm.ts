@@ -15,7 +15,7 @@ export const useInvoiceForm = () => {
   };
 
   // Counter for generating unique item IDs
-  let itemIdCounter = 0;
+  let itemIdCounter = 1;
 
   const createEmptyItem = (): DocumentItem => {
     itemIdCounter++;
@@ -37,7 +37,7 @@ export const useInvoiceForm = () => {
     dueDate: new Date(),
     terms: "Due on receipt",
     customer: initialCustomer,
-    items: [createEmptyItem(), createEmptyItem()], // Start with 2 empty rows
+    items: [createEmptyItem()], // Start with 2 empty rows
     messageOnInvoice: "",
     messageOnStatement: "",
     tags: [],
@@ -145,10 +145,11 @@ export const useInvoiceForm = () => {
   };
 
   // Update other fees and recalculate totals
-  const updateOtherFees = (otherFees: { description: string; amount?: number }) => {
+  const updateOtherFees = (updates: Partial<OtherFees>) => {
     setInvoice((prev) => {
-      const { subTotal, total, balanceDue } = calculateTotals(prev.items, otherFees);
-      return { ...prev, otherFees, subTotal, total, balanceDue };
+      const newOtherFees = { ...prev.otherFees, ...updates };
+      const { subTotal, total, balanceDue } = calculateTotals(prev.items, newOtherFees);
+      return { ...prev, otherFees: newOtherFees, subTotal, total, balanceDue };
     });
   };
 
