@@ -293,26 +293,78 @@ async def get_sales_reps(current_user: str = Depends(get_current_user)):
         return users_response.data
     raise HTTPException(status_code=404, detail="No sales reps found")
 
+
+class TransactionItemCreate(BaseModel):
+    product_id: Optional[int] = None
+    description: Optional[str] = None
+    quantity: float
+    unit_of_measure: str
+    unit_price: float
+    tax_percent: float
+    amount: float
+
+class TransactionCreate(BaseModel):
+    transaction_number: str
+    transaction_type: str
+    customer_id: int
+    sales_rep_id: Optional[int] = None
+    transaction_date: date
+    due_date: Optional[date] = None
+    expiration_date: Optional[date] = None
+    terms: Optional[str] = None
+    status: str
+    message: Optional[str] = None
+    net_total: float
+    tax_total: float
+    other_fees: float
+    gross_total: float
+    parent_transaction_id: Optional[int] = None
+    deleted_at: Optional[date] = None
+    items: List[TransactionItemCreate]
+
+def convert_dates_to_strings(data: dict) -> dict:
+    for key, value in data.items():
+        if isinstance(value, date):
+            data[key] = value.isoformat()
+    return data
+    
 # Invoice Endpoint
 @app.post("/invoices", response_model=Transaction)
-async def create_invoice(invoice: Transaction, current_user: str = Depends(get_current_user)):
+async def create_invoice(invoice: TransactionCreate, current_user: str = Depends(get_current_user)):
+    # Fetch user data
     user_response = supabase.table("users").select("company_id, id").eq("auth_user_id", current_user).execute()
     if not user_response.data:
         raise HTTPException(status_code=404, detail="User not found")
     company_id = user_response.data[0]["company_id"]
     user_id = user_response.data[0]["id"]
-    invoice.company_id = company_id
+
+    # Prepare invoice data and convert dates
     invoice_data = invoice.dict(exclude={"items"})
+    invoice_data = convert_dates_to_strings(invoice_data)
+    invoice_data["company_id"] = company_id
     invoice_data["created_by"] = user_id
     invoice_data["updated_by"] = user_id
+
+    # Insert invoice into transactions table
     transaction_response = supabase.table("transactions").insert(invoice_data).execute()
     if not transaction_response.data:
         raise HTTPException(status_code=400, detail="Failed to create invoice")
     transaction_id = transaction_response.data[0]["id"]
+
+    # Insert transaction items
     for item in invoice.items:
-        item.transaction_id = transaction_id
         item_data = item.dict()
+        item_data = convert_dates_to_strings(item_data)  # Safe to include even if no dates
+        item_data["transaction_id"] = transaction_id
         item_data["created_by"] = user_id
         item_data["updated_by"] = user_id
         supabase.table("transaction_items").insert(item_data).execute()
-    return transaction_response.data[0]
+
+    # Fetch the full transaction with items
+    full_transaction_data = supabase.table("transactions").select("*").eq("id", transaction_id).execute().data[0]
+    items_data = supabase.table("transaction_items").select("*").eq("transaction_id", transaction_id).execute().data
+    full_transaction_data["items"] = items_data
+
+    # Construct and return a Transaction object
+    full_transaction = Transaction(**full_transaction_data)
+    return full_transaction

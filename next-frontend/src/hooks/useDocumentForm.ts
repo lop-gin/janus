@@ -25,7 +25,7 @@ export function useDocumentForm<T extends Document>(initialState: T) {
       
       const otherFeesAmount = newDocument.otherFees?.amount || 0;
       const total = subTotal + tax + otherFeesAmount;
-      const balanceDue = total;
+      const balanceDue = subTotal + tax + otherFeesAmount;
       
       return {
         ...newDocument,

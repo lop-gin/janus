@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -13,13 +12,16 @@ export const OtherFees: React.FC<OtherFeesProps> = ({
   otherFees,
   updateOtherFees,
 }) => {
-  // Custom input handler to restrict input to numbers and decimals only
   const handleNumberInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    
-    // Allow empty values, numbers, and only one decimal point
-    if (value === "" || /^[0-9]*\.?[0-9]*$/.test(value)) {
-      updateOtherFees({ amount: value === "" ? undefined : parseFloat(value) || 0 });
+
+    if (value === "") {
+      updateOtherFees({ amount: undefined });
+    } else {
+      const parsedValue = parseFloat(value);
+      if (!isNaN(parsedValue)) {
+        updateOtherFees({ amount: parsedValue });
+      }
     }
   };
 
@@ -40,7 +42,7 @@ export const OtherFees: React.FC<OtherFeesProps> = ({
           className="text-xs text-right"
           type="text"
           inputMode="decimal"
-          value={otherFees.amount === undefined ? "" : otherFees.amount}
+          value={otherFees.amount !== undefined ? otherFees.amount.toString() : ""}
           onChange={handleNumberInput}
           placeholder=""
         />

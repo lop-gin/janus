@@ -14,13 +14,30 @@ export const useInvoiceForm = () => {
     billing_address: { street: "", city: "", state: "", zipCode: "", country: "" },
   };
 
+  // Counter for generating unique item IDs
+  let itemIdCounter = 0;
+
+  const createEmptyItem = (): DocumentItem => {
+    itemIdCounter++;
+    return {
+      id: `item-${itemIdCounter}`,
+      product: "",
+      description: "",
+      quantity: 1, // Default quantity can be 1, as it's a common starting point
+      unit: "",
+      unitPrice: 0,
+      taxPercent: 0,
+      amount: 0,
+    };
+  };
+
   const [invoice, setInvoice] = useState<InvoiceType>({
     invoiceNumber: `INV-${Date.now()}`,
     invoiceDate: new Date(),
     dueDate: new Date(),
     terms: "Due on receipt",
     customer: initialCustomer,
-    items: [],
+    items: [createEmptyItem(), createEmptyItem()], // Start with 2 empty rows
     messageOnInvoice: "",
     messageOnStatement: "",
     tags: [],
@@ -30,9 +47,32 @@ export const useInvoiceForm = () => {
     otherFees: { description: "", amount: 0 },
   });
 
-  // Update top-level invoice properties
+  // Helper function to calculate totals including tax
+  const calculateTotals = (items: DocumentItem[], otherFees: { description: string; amount?: number }) => {
+    const subTotal = items.reduce((sum, item) => sum + ((item.quantity || 0) * (item.unitPrice || 0)), 0);
+    const taxTotal = items.reduce(
+      (sum, item) => sum + (((item.quantity || 0) * (item.unitPrice || 0)) * ((item.taxPercent || 0) / 100)),
+      0
+    );
+    const otherFeesAmount = otherFees?.amount || 0;
+    const total = subTotal + taxTotal + otherFeesAmount;
+    const balanceDue = total; // For invoices, balanceDue typically equals total unless payments are applied
+    return { subTotal, taxTotal, total, balanceDue };
+  };
+
+  // Update top-level invoice properties and recalculate totals if items or otherFees change
   const updateInvoice = (updates: Partial<InvoiceType>) => {
-    setInvoice((prev) => ({ ...prev, ...updates }));
+    setInvoice((prev) => {
+      const newInvoice = { ...prev, ...updates };
+      if (updates.items || updates.otherFees) {
+        const { subTotal, total, balanceDue } = calculateTotals(
+          newInvoice.items,
+          newInvoice.otherFees || { description: "", amount: 0 }
+        );
+        return { ...newInvoice, subTotal, total, balanceDue };
+      }
+      return newInvoice;
+    });
   };
 
   // Update customer details
@@ -40,19 +80,14 @@ export const useInvoiceForm = () => {
     setInvoice((prev) => ({ ...prev, customer }));
   };
 
-  // Add a new item to the invoice
+  // Add a new item to the invoice and recalculate totals
   const addInvoiceItem = () => {
-    const newItem: DocumentItem = {
-      id: Date.now().toString(),
-      product: "",
-      description: "",
-      quantity: 1,
-      unit: "",
-      unitPrice: 0,
-      taxPercent: 0,
-      amount: 0,
-    };
-    setInvoice((prev) => ({ ...prev, items: [...prev.items, newItem] }));
+    const newItem = createEmptyItem();
+    setInvoice((prev) => {
+      const items = [...prev.items, newItem];
+      const { subTotal, total, balanceDue } = calculateTotals(items, prev.otherFees || { description: "", amount: 0 });
+      return { ...prev, items, subTotal, total, balanceDue };
+    });
   };
 
   // Update an existing item and recalculate totals
@@ -61,31 +96,30 @@ export const useInvoiceForm = () => {
       const items = prev.items.map((item) =>
         item.id === itemId ? { ...item, ...updates } : item
       );
-      const subTotal = items.reduce((sum, item) => sum + (item.amount || 0), 0);
-      const total = subTotal + (prev.otherFees?.amount || 0);
-      return { ...prev, items, subTotal, total, balanceDue: total };
+      const { subTotal, total, balanceDue } = calculateTotals(items, prev.otherFees || { description: "", amount: 0 });
+      return { ...prev, items, subTotal, total, balanceDue };
     });
   };
 
-  // Remove an item and recalculate totals
+  // Remove an item and recalculate totals, ensuring at least one item remains
   const removeInvoiceItem = (itemId: string) => {
     setInvoice((prev) => {
-      const items = prev.items.filter((item) => item.id !== itemId);
-      const subTotal = items.reduce((sum, item) => sum + (item.amount || 0), 0);
-      const total = subTotal + (prev.otherFees?.amount || 0);
-      return { ...prev, items, subTotal, total, balanceDue: total };
+      let items = prev.items.filter((item) => item.id !== itemId);
+      if (items.length === 0) {
+        items = [createEmptyItem()]; // Ensure at least 1 row remains
+      }
+      const { subTotal, total, balanceDue } = calculateTotals(items, prev.otherFees || { description: "", amount: 0 });
+      return { ...prev, items, subTotal, total, balanceDue };
     });
   };
 
-  // Clear all items and reset totals
+  // Clear all items and reset to 1 empty item
   const clearAllItems = () => {
-    setInvoice((prev) => ({
-      ...prev,
-      items: [],
-      subTotal: 0,
-      total: prev.otherFees?.amount || 0,
-      balanceDue: prev.otherFees?.amount || 0,
-    }));
+    setInvoice((prev) => {
+      const items = [createEmptyItem()]; // Reset to 1 empty row
+      const { subTotal, total, balanceDue } = calculateTotals(items, prev.otherFees || { description: "", amount: 0 });
+      return { ...prev, items, subTotal, total, balanceDue };
+    });
   };
 
   // Update terms and adjust due date accordingly
@@ -93,7 +127,7 @@ export const useInvoiceForm = () => {
     let dueDate = new Date(invoice.invoiceDate);
     switch (terms) {
       case "Due on receipt":
-        break; // Due date is same as invoice date
+        break;
       case "Net 15":
         dueDate.setDate(dueDate.getDate() + 15);
         break;
@@ -110,18 +144,26 @@ export const useInvoiceForm = () => {
     setInvoice((prev) => ({ ...prev, terms, dueDate }));
   };
 
-  // Update other fees and recalculate total
+  // Update other fees and recalculate totals
   const updateOtherFees = (otherFees: { description: string; amount?: number }) => {
-    const amount = otherFees.amount || 0;
     setInvoice((prev) => {
-      const total = prev.subTotal + amount;
-      return { ...prev, otherFees, total, balanceDue: total };
+      const { subTotal, total, balanceDue } = calculateTotals(prev.items, otherFees);
+      return { ...prev, otherFees, subTotal, total, balanceDue };
     });
   };
 
   // Save invoice to the backend
   const saveInvoice = async () => {
     try {
+      if (!invoice.customer.id) {
+        alert("Please select a customer before saving the invoice.");
+        return false;
+      }
+
+      const { subTotal, taxTotal, total, balanceDue } = calculateTotals(
+        invoice.items,
+        invoice.otherFees || { description: "", amount: 0 }
+      );
       const invoiceData = {
         transaction_number: invoice.invoiceNumber,
         transaction_type: "invoice",
@@ -132,21 +174,18 @@ export const useInvoiceForm = () => {
         terms: invoice.terms,
         status: "due",
         message: invoice.messageOnInvoice,
-        net_total: invoice.subTotal,
-        tax_total: invoice.items.reduce(
-          (sum, item) => sum + ((item.taxPercent || 0) * (item.amount || 0)) / 100,
-          0
-        ),
+        net_total: subTotal,
+        tax_total: taxTotal,
         other_fees: invoice.otherFees?.amount || 0,
-        gross_total: invoice.total,
+        gross_total: total,
         items: invoice.items.map((item) => ({
-          product_id: item.product ? parseInt(item.product) : null,
+          product_id: item.product && !isNaN(parseInt(item.product)) ? parseInt(item.product) : null,
           description: item.description,
           quantity: item.quantity || 0,
           unit_of_measure: item.unit || "",
           unit_price: item.unitPrice || 0,
           tax_percent: item.taxPercent || 0,
-          amount: item.amount || 0,
+          amount: (item.quantity || 0) * (item.unitPrice || 0),
         })),
       };
       const response = await api.post("http://127.0.0.1:8000/invoices", invoiceData);
@@ -158,7 +197,7 @@ export const useInvoiceForm = () => {
     }
   };
 
-  // Reset the form to initial state
+  // Reset the form to initial state with 1 empty item
   const clearForm = () => {
     setInvoice({
       invoiceNumber: `INV-${Date.now()}`,
@@ -166,7 +205,7 @@ export const useInvoiceForm = () => {
       dueDate: new Date(),
       terms: "Due on receipt",
       customer: initialCustomer,
-      items: [],
+      items: [createEmptyItem()], // Reset to 1 empty row
       messageOnInvoice: "",
       messageOnStatement: "",
       tags: [],
