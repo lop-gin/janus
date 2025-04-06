@@ -1,27 +1,21 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import api from "@/lib/api";
-import { Customer, Document } from "@/types/document";
+import { Customer, Document, Address } from "@/types/document";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { HelpCircle } from "lucide-react";
+import { HelpCircle, X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem } from "@/components/ui/select";
 import { AddCustomerSheet } from "./AddCustomerSheet";
 
 /**
  * Props for the CustomerSection component.
  */
 interface CustomerSectionProps {
-  customer: {
-    id?: number;
-    name: string;
-    company?: string;
-    email?: string;
-    billingAddress: string; // String in form state, converted from Address object
-  };
+  customer: Customer;
   document: Document;
   updateCustomer: (customer: Customer) => void;
   updateDocument: (updates: Partial<Document>) => void;
@@ -30,7 +24,6 @@ interface CustomerSectionProps {
 
 /**
  * CustomerSection component manages customer selection and details input for the invoice form.
- * Fetches customers filtered by the current user's company ID and handles adding new customers.
  */
 export const CustomerSection: React.FC<CustomerSectionProps> = ({
   customer,
@@ -43,13 +36,33 @@ export const CustomerSection: React.FC<CustomerSectionProps> = ({
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
+    customer.id?.toString() || null
+  );
+  const [searchTerm, setSearchTerm] = useState<string>(
+    customer.name || ""
+  );
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Utility to format Address object into a string for display
-  const formatBillingAddress = (address: { street: string; city: string; state: string; zipCode: string; country: string }): string => {
+  // Format Address object into a string for display
+  const formatBillingAddress = (address: Address): string => {
     return `${address.street}, ${address.city}, ${address.state} ${address.zipCode}, ${address.country}`;
   };
 
-  // Fetch customers on mount, ensuring token is present
+  // Parse string into Address object
+  const parseBillingAddress = (addressString: string): Address => {
+    const parts = addressString.split(", ");
+    return {
+      street: parts[0] || "",
+      city: parts[1] || "",
+      state: parts[2] ? parts[2].split(" ")[0] : "",
+      zipCode: parts[2] ? parts[2].split(" ")[1] : "",
+      country: parts[3] || "",
+    };
+  };
+
+  // Fetch customers on mount
   useEffect(() => {
     const fetchCustomers = async () => {
       const token = localStorage.getItem("supabase.auth.token");
@@ -64,7 +77,6 @@ export const CustomerSection: React.FC<CustomerSectionProps> = ({
         const response = await api.get("http://127.0.0.1:8000/customers", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        console.log("Fetched customers:", response.data); // Debug log
         setCustomers(response.data);
         setError(null);
       } catch (err) {
@@ -80,7 +92,12 @@ export const CustomerSection: React.FC<CustomerSectionProps> = ({
   // Handle input changes for customer details
   const handleCustomerChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    updateCustomer({ ...customer, [name]: value });
+    if (name === "billing_address") {
+      const updatedAddress = parseBillingAddress(value);
+      updateCustomer({ ...customer, billing_address: updatedAddress });
+    } else {
+      updateCustomer({ ...customer, [name]: value });
+    }
   };
 
   // Handle customer selection from dropdown
@@ -88,34 +105,121 @@ export const CustomerSection: React.FC<CustomerSectionProps> = ({
     if (value === "add-new") {
       setIsSheetOpen(true);
     } else {
-      const selected = customers.find((c) => c.id?.toString() === value);
-      if (selected) {
-        const billingAddressString = formatBillingAddress(selected.billing_address);
+      const selectedCustomer = customers.find((c) => c.id!.toString() === value);
+      if (selectedCustomer) {
+        setSelectedCustomerId(value);
+        setSearchTerm(selectedCustomer.name || "");
         updateCustomer({
-          id: selected.id,
-          name: selected.name,
-          company: selected.company || "",
-          email: selected.email || "",
-          billingAddress: billingAddressString,
-          billing_address: selected.billing_address, // Preserve Address object for saving
+          id: selectedCustomer.id,
+          name: selectedCustomer.name || "",
+          company: selectedCustomer.company || "",
+          email: selectedCustomer.email || "",
+          billing_address: selectedCustomer.billing_address || {
+            street: "",
+            city: "",
+            state: "",
+            zipCode: "",
+            country: "",
+          },
         });
-        if (onCustomerSelect) onCustomerSelect(selected.name);
+        setIsDropdownOpen(false);
       }
     }
   };
 
   // Handle new customer addition from sheet
-  const handleCustomerAdded = (addedCustomer: {
-    id: number;
-    name: string;
-    company?: string;
-    email?: string;
-    billing_address: { street: string; city: string; state: string; zipCode: string; country: string };
-    initial_balance: number;
-  }) => {
+  const handleCustomerAdded = (addedCustomer: Customer) => {
     setCustomers([...customers, addedCustomer]);
-    handleCustomerSelect(addedCustomer.id.toString());
+    const newCustomerId = addedCustomer.id!.toString();
+    setSelectedCustomerId(newCustomerId);
+    setSearchTerm(addedCustomer.name || "");
+    updateCustomer({
+      id: addedCustomer.id,
+      name: addedCustomer.name,
+      company: addedCustomer.company || "",
+      email: addedCustomer.email || "",
+      billing_address: addedCustomer.billing_address,
+    });
     setIsSheetOpen(false);
+  };
+
+  // Handle sheet closure without adding a customer
+  const handleSheetClose = () => {
+    setIsSheetOpen(false);
+    if (!selectedCustomerId) {
+      setSearchTerm("");
+    } else {
+      const selectedCustomer = customers.find((c) => c.id!.toString() === selectedCustomerId);
+      if (selectedCustomer) {
+        setSearchTerm(selectedCustomer.name || "");
+      }
+    }
+  };
+
+  // Filter customers based on search term
+  const filteredCustomers = customers.filter((cust) =>
+    cust.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Handle input change for search
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    setIsDropdownOpen(true);
+  };
+
+  // Handle clear button
+  const handleClear = () => {
+    setSelectedCustomerId(null);
+    setSearchTerm("");
+    updateCustomer({
+      id: undefined,
+      name: "",
+      company: "",
+      email: "",
+      billing_address: { street: "", city: "", state: "", zipCode: "", country: "" },
+    });
+  };
+
+  // Handle input blur
+  const handleBlur = () => {
+    const matchingCustomer = customers.find(
+      (cust) => cust.name.toLowerCase() === searchTerm.toLowerCase()
+    );
+    if (!matchingCustomer) {
+      setSearchTerm("");
+      setSelectedCustomerId(null);
+      updateCustomer({
+        id: undefined,
+        name: "",
+        company: "",
+        email: "",
+        billing_address: { street: "", city: "", state: "", zipCode: "", country: "" },
+      });
+    }
+    setIsDropdownOpen(false);
+  };
+
+  // Handle Enter key press
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      const matchingCustomer = customers.find(
+        (cust) => cust.name.toLowerCase() === searchTerm.toLowerCase()
+      );
+      if (matchingCustomer) {
+        handleCustomerSelect(matchingCustomer.id!.toString());
+      } else {
+        setSearchTerm("");
+        setSelectedCustomerId(null);
+        updateCustomer({
+          id: undefined,
+          name: "",
+          company: "",
+          email: "",
+          billing_address: { street: "", city: "", state: "", zipCode: "", country: "" },
+        });
+      }
+      setIsDropdownOpen(false);
+    }
   };
 
   return (
@@ -129,21 +233,48 @@ export const CustomerSection: React.FC<CustomerSectionProps> = ({
               </Label>
               <HelpCircle className="h-3 w-3 text-gray-400" />
             </div>
-            <Select onValueChange={handleCustomerSelect} disabled={loading}>
-              <SelectTrigger className="w-full h-9 text-xs">
-                <SelectValue placeholder={loading ? "Loading customers..." : "Select a customer"} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="add-new" className="font-semibold text-green-600">
-                  Add New
-                </SelectItem>
-                {customers.map((cust) => (
-                  <SelectItem key={cust.id} value={cust.id!.toString()}>
-                    {cust.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="relative" ref={dropdownRef}>
+              <Input
+                id="customer"
+                className="w-full h-9 text-xs pr-8"
+                value={searchTerm}
+                onChange={handleSearchChange}
+                onFocus={() => setIsDropdownOpen(true)}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
+                placeholder={loading ? "Loading customers..." : "Select or type a customer"}
+                disabled={loading}
+              />
+              {selectedCustomerId && (
+                <button
+                  onClick={handleClear}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+              {isDropdownOpen && !loading && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg top-[100%]">
+                  <div className="max-h-60 overflow-y-auto">
+                    <div
+                      className="p-2 hover:bg-gray-100 cursor-pointer font-semibold text-green-600"
+                      onMouseDown={() => handleCustomerSelect("add-new")}
+                    >
+                      Add New
+                    </div>
+                    {filteredCustomers.map((cust) => (
+                      <div
+                        key={cust.id}
+                        className="p-2 text-black hover:bg-gray-100 cursor-pointer"
+                        onMouseDown={() => handleCustomerSelect(cust.id!.toString())}
+                      >
+                        {cust.name}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
             {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
           </div>
           <div>
@@ -174,22 +305,22 @@ export const CustomerSection: React.FC<CustomerSectionProps> = ({
           />
         </div>
         <div>
-          <Label htmlFor="billingAddress" className="text-xs font-medium text-gray-600 mr-1">
+          <Label htmlFor="billing_address" className="text-xs font-medium text-gray-600 mr-1">
             Billing Address
           </Label>
           <Textarea
-            id="billingAddress"
-            name="billingAddress"
+            id="billing_address"
+            name="billing_address"
             className="min-h-[80px] resize-none text-xs"
-            value={customer.billingAddress}
-            onChange={(e) => updateCustomer({ ...customer, billingAddress: e.target.value })}
+            value={formatBillingAddress(customer.billing_address)}
+            onChange={handleCustomerChange}
           />
         </div>
       </div>
       <Separator className="mt-5 mb-0 w-full bg-gray-200" />
       <AddCustomerSheet
         isOpen={isSheetOpen}
-        onOpenChange={setIsSheetOpen}
+        onOpenChange={handleSheetClose}
         onCustomerAdded={handleCustomerAdded}
       />
     </div>

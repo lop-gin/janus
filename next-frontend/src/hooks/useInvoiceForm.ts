@@ -1,6 +1,6 @@
 import { useState } from "react";
 import api from "@/lib/api";
-import { InvoiceType, DocumentItem, Customer } from "@/types/document";
+import { InvoiceType, DocumentItem, Customer, OtherFees } from "@/types/document";
 
 /**
  * Custom hook to manage invoice form state and operations.
@@ -22,6 +22,7 @@ export const useInvoiceForm = () => {
     return {
       id: `item-${itemIdCounter}`,
       product: "",
+      customerproduct: "", // Added missing required property
       description: "",
       quantity: 1, // Default quantity can be 1, as it's a common starting point
       unit: "",
@@ -147,7 +148,13 @@ export const useInvoiceForm = () => {
   // Update other fees and recalculate totals
   const updateOtherFees = (updates: Partial<OtherFees>) => {
     setInvoice((prev) => {
-      const newOtherFees = { ...prev.otherFees, ...updates };
+      // Ensure otherFees has a description with default empty string
+      const prevOtherFees = prev.otherFees || { description: "", amount: 0 };
+      // Ensure the new otherFees object has a description property that's always a string
+      const newOtherFees: OtherFees = { 
+        description: updates.description !== undefined ? updates.description : prevOtherFees.description, 
+        amount: updates.amount !== undefined ? updates.amount : prevOtherFees.amount 
+      };
       const { subTotal, total, balanceDue } = calculateTotals(prev.items, newOtherFees);
       return { ...prev, otherFees: newOtherFees, subTotal, total, balanceDue };
     });

@@ -92,8 +92,25 @@ export const ItemRow: React.FC<ItemRowProps> = ({
   };
 
   const handleProductAdded = (addedProduct: Product) => {
+    // Update products list with the new product
     setProducts([...products, addedProduct]);
-    handleProductChange(addedProduct.id.toString());
+    
+    // Fetch the latest categories to ensure any new category is included
+    const fetchLatestCategories = async () => {
+      try {
+        const categoriesResponse = await api.get("http://127.0.0.1:8000/categories", {
+          headers: { Authorization: `Bearer ${localStorage.getItem("supabase.auth.token")}` },
+        });
+        setCategories(categoriesResponse.data);
+      } catch (error) {
+        console.error("Failed to fetch updated categories", error);
+      }
+    };
+    
+    // Fetch latest categories and then update the product selection
+    fetchLatestCategories().then(() => {
+      handleProductChange(addedProduct.id.toString());
+    });
   };
 
   const unitOptions = selectedProduct
