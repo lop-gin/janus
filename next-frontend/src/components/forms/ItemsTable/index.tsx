@@ -31,6 +31,9 @@ export const ItemsTable: React.FC<ItemsTableProps> = ({
   );
 
   useEffect(() => {
+    // Log item IDs to verify uniqueness
+    console.log("Item IDs:", items.map((item) => item.id));
+
     if (items.length > 0 && !items.some((item) => item.id === selectedRow)) {
       setSelectedRow(items[0].id);
     }

@@ -32,7 +32,7 @@ export const DocumentTotal: React.FC<DocumentTotalProps> = ({
         <div>
           <div className="text-xl text-gray-500">{getBalanceDueLabel()}</div>
           <div className="text-4xl font-bold text-gray-800">
-            {balanceDue.toFixed(2)}
+            {total.toFixed(2)}
           </div>
         </div>
       </div>

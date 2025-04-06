@@ -95,7 +95,7 @@ export default function InvoicePage() {
               <DocumentTotal
                 total={invoice.total}
                 balanceDue={invoice.balanceDue}
-                otherFeesAmount={invoice.otherFees?.amount}
+                documentType="invoice"
               />
             </div>
             <div className="bg-white rounded-md shadow-sm p-4 mb-6">

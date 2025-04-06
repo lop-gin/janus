@@ -368,3 +368,48 @@ async def create_invoice(invoice: TransactionCreate, current_user: str = Depends
     # Construct and return a Transaction object
     full_transaction = Transaction(**full_transaction_data)
     return full_transaction
+
+
+@app.post("/sales-receipts", response_model=Transaction)
+async def create_sales_receipt(sales_receipt: TransactionCreate, current_user: str = Depends(get_current_user)):
+    # Fetch user data
+    user_response = supabase.table("users").select("company_id, id").eq("auth_user_id", current_user).execute()
+    if not user_response.data:
+        raise HTTPException(status_code=404, detail="User not found")
+    company_id = user_response.data[0]["company_id"]
+    user_id = user_response.data[0]["id"]
+
+    # Ensure transaction_type is "sales_receipt"
+    if sales_receipt.transaction_type != "sales_receipt":
+        raise HTTPException(status_code=400, detail="Invalid transaction type for sales receipt")
+
+    # Prepare sales receipt data and convert dates
+    sales_receipt_data = sales_receipt.dict(exclude={"items"})
+    sales_receipt_data = convert_dates_to_strings(sales_receipt_data)
+    sales_receipt_data["company_id"] = company_id
+    sales_receipt_data["created_by"] = user_id
+    sales_receipt_data["updated_by"] = user_id
+
+    # Insert sales receipt into transactions table
+    transaction_response = supabase.table("transactions").insert(sales_receipt_data).execute()
+    if not transaction_response.data:
+        raise HTTPException(status_code=400, detail="Failed to create sales receipt")
+    transaction_id = transaction_response.data[0]["id"]
+
+    # Insert transaction items
+    for item in sales_receipt.items:
+        item_data = item.dict()
+        item_data = convert_dates_to_strings(item_data)
+        item_data["transaction_id"] = transaction_id
+        item_data["created_by"] = user_id
+        item_data["updated_by"] = user_id
+        supabase.table("transaction_items").insert(item_data).execute()
+
+    # Fetch the full transaction with items
+    full_transaction_data = supabase.table("transactions").select("*").eq("id", transaction_id).execute().data[0]
+    items_data = supabase.table("transaction_items").select("*").eq("transaction_id", transaction_id).execute().data
+    full_transaction_data["items"] = items_data
+
+    # Return the full transaction
+    full_transaction = Transaction(**full_transaction_data)
+    return full_transaction

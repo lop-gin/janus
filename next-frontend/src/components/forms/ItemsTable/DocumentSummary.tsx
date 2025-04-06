@@ -54,12 +54,12 @@ export const DocumentSummary: React.FC<DocumentSummaryProps> = ({
           {formatCurrency(calculateTotal())}
         </span>
       </div>
-      <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+      {/* <div className="flex justify-between items-center pt-2 border-t border-gray-200">
         <span className="text-gray-700 font-bold text-xs">Balance due</span>
         <span className="font-bold text-black">
           {formatCurrency(calculateTotal())}
         </span>
-      </div>
+      </div> */}
     </div>
   );
 };

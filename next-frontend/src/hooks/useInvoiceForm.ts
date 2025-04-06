@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { v4 as uuidv4 } from 'uuid';
 import api from "@/lib/api";
 import { InvoiceType, DocumentItem, Customer, OtherFees } from "@/types/document";
 
@@ -14,17 +15,13 @@ export const useInvoiceForm = () => {
     billing_address: { street: "", city: "", state: "", zipCode: "", country: "" },
   };
 
-  // Counter for generating unique item IDs
-  let itemIdCounter = 1;
-
   const createEmptyItem = (): DocumentItem => {
-    itemIdCounter++;
     return {
-      id: `item-${itemIdCounter}`,
+      id: uuidv4(), // Use UUID for unique IDs
       product: "",
-      customerproduct: "", // Added missing required property
+      customerproduct: "",
       description: "",
-      quantity: 1, // Default quantity can be 1, as it's a common starting point
+      quantity: 1,
       unit: "",
       unitPrice: 0,
       taxPercent: 0,
@@ -38,7 +35,7 @@ export const useInvoiceForm = () => {
     dueDate: new Date(),
     terms: "Due on receipt",
     customer: initialCustomer,
-    items: [createEmptyItem()], // Start with 2 empty rows
+    items: [createEmptyItem()], // Start with 1 empty row with unique ID
     messageOnInvoice: "",
     messageOnStatement: "",
     tags: [],
@@ -57,7 +54,7 @@ export const useInvoiceForm = () => {
     );
     const otherFeesAmount = otherFees?.amount || 0;
     const total = subTotal + taxTotal + otherFeesAmount;
-    const balanceDue = total; // For invoices, balanceDue typically equals total unless payments are applied
+    const balanceDue = total;
     return { subTotal, taxTotal, total, balanceDue };
   };
 
@@ -107,7 +104,7 @@ export const useInvoiceForm = () => {
     setInvoice((prev) => {
       let items = prev.items.filter((item) => item.id !== itemId);
       if (items.length === 0) {
-        items = [createEmptyItem()]; // Ensure at least 1 row remains
+        items = [createEmptyItem()];
       }
       const { subTotal, total, balanceDue } = calculateTotals(items, prev.otherFees || { description: "", amount: 0 });
       return { ...prev, items, subTotal, total, balanceDue };
@@ -117,7 +114,7 @@ export const useInvoiceForm = () => {
   // Clear all items and reset to 1 empty item
   const clearAllItems = () => {
     setInvoice((prev) => {
-      const items = [createEmptyItem()]; // Reset to 1 empty row
+      const items = [createEmptyItem()];
       const { subTotal, total, balanceDue } = calculateTotals(items, prev.otherFees || { description: "", amount: 0 });
       return { ...prev, items, subTotal, total, balanceDue };
     });
@@ -148,9 +145,7 @@ export const useInvoiceForm = () => {
   // Update other fees and recalculate totals
   const updateOtherFees = (updates: Partial<OtherFees>) => {
     setInvoice((prev) => {
-      // Ensure otherFees has a description with default empty string
       const prevOtherFees = prev.otherFees || { description: "", amount: 0 };
-      // Ensure the new otherFees object has a description property that's always a string
       const newOtherFees: OtherFees = { 
         description: updates.description !== undefined ? updates.description : prevOtherFees.description, 
         amount: updates.amount !== undefined ? updates.amount : prevOtherFees.amount 
@@ -213,7 +208,7 @@ export const useInvoiceForm = () => {
       dueDate: new Date(),
       terms: "Due on receipt",
       customer: initialCustomer,
-      items: [createEmptyItem()], // Reset to 1 empty row
+      items: [createEmptyItem()],
       messageOnInvoice: "",
       messageOnStatement: "",
       tags: [],
