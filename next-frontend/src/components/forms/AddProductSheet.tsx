@@ -100,7 +100,7 @@ export const AddProductSheet: React.FC<AddProductSheetProps> = ({
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await api.get("http://127.0.0.1:8000/categories", {
+        const response = await api.get("/categories", {
           headers: { Authorization: `Bearer ${localStorage.getItem("supabase.auth.token")}` },
         });
         setCategories(response.data);
@@ -164,7 +164,7 @@ export const AddProductSheet: React.FC<AddProductSheetProps> = ({
     }
     try {
       const response = await api.post(
-        "http://127.0.0.1:8000/categories",
+        "/categories",
         newCategory,
         { headers: { Authorization: `Bearer ${localStorage.getItem("supabase.auth.token")}` } }
       );
@@ -209,7 +209,7 @@ export const AddProductSheet: React.FC<AddProductSheetProps> = ({
     }
 
     try {
-      const response = await api.post("http://127.0.0.1:8000/products", data, {
+      const response = await api.post("/products", data, {
         headers: { Authorization: `Bearer ${localStorage.getItem("supabase.auth.token")}` },
       });
       onProductAdded(response.data);

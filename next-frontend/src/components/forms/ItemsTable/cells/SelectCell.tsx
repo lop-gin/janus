@@ -12,7 +12,7 @@ interface SelectCellProps {
   onChange: (value: string) => void;
   options: { value: string; label: string }[];
   isEditing: boolean;
-  onFocus?: () => void;
+  onFocus?: (e?: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
   displayValue?: string; // New prop for displaying the label when not editing
 }
 

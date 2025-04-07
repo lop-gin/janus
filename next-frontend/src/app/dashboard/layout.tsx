@@ -15,7 +15,8 @@ export default function DashboardLayout({
   const { user, isLoading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [newMenuOpen, setNewMenuOpen] = useState(false);
-  const newButtonRef = useRef<HTMLButtonElement>(null);
+  // Using ! to assert non-null to match the expected type in NewActionMenu
+  const newButtonRef = useRef<HTMLButtonElement>(null!);
 
   // Redirect if not authenticated
   if (!isLoading && !user) {

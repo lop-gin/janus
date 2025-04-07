@@ -1,0 +1,27 @@
+version: '3'
+services:
+  frontend:
+    build: ./next-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - NEXT_PUBLIC_BACKEND_URL=${BACKEND_URL}
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - SUPABASE_URL=${SUPABASE_INTERNAL_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SECRET_KEY=${SECRET_KEY}
+      - ALGORITHM=${ALGORITHM}
+    networks:
+      - supabase_network
+
+networks:
+  supabase_network:
+    external:
+      name: supabase_network_Projects

@@ -67,9 +67,9 @@ export default function DashboardHeader({ sidebarOpen, toggleSidebar }: Dashboar
             </span>
             
             {/* Display role badges */}
-            {userData?.roles.length > 0 && (
+            {userData?.roles && userData.roles.length > 0 && (
               <div className="flex mr-2">
-                {userData.roles.map((role) => (
+                {userData?.roles.map((role) => (
                   <UserRoleBadge key={role} role={role} />
                 ))}
               </div>
@@ -102,7 +102,7 @@ export default function DashboardHeader({ sidebarOpen, toggleSidebar }: Dashboar
                 )}
 
                 {/* Role badges */}
-                {userData?.roles.length > 0 && (
+                {userData?.roles && userData.roles.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1">
                     {userData.roles.map((role) => (
                       <UserRoleBadge key={role} role={role} />
@@ -168,7 +168,7 @@ export default function DashboardHeader({ sidebarOpen, toggleSidebar }: Dashboar
             )}
             
             {/* Role badges mobile */}
-            {userData?.roles.length > 0 && (
+            {userData?.roles && userData.roles.length > 0 && (
               <div className="mt-2 px-4 flex flex-wrap">
                 {userData.roles.map((role) => (
                   <UserRoleBadge key={role} role={role} className="mr-1 mb-1" />

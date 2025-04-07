@@ -16,7 +16,7 @@ export const SalesRepresentative: React.FC<SalesRepresentativeProps> = ({ value,
     const fetchSalesReps = async () => {
       try {
         console.log("Token:", localStorage.getItem("supabase.auth.token"));
-        const response = await api.get("http://127.0.0.1:8000/sales-reps", {
+        const response = await api.get("/sales-reps", {
           headers: { Authorization: `Bearer ${localStorage.getItem("supabase.auth.token")}` },
         });
         setSalesReps(response.data);

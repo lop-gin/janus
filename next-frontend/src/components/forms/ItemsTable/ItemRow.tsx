@@ -53,10 +53,10 @@ export const ItemRow: React.FC<ItemRowProps> = ({
     const fetchData = async () => {
       try {
         const [productsResponse, categoriesResponse] = await Promise.all([
-          api.get("http://127.0.0.1:8000/products", {
+          api.get("/products", {
             headers: { Authorization: `Bearer ${localStorage.getItem("supabase.auth.token")}` },
           }),
-          api.get("http://127.0.0.1:8000/categories", {
+          api.get("/categories", {
             headers: { Authorization: `Bearer ${localStorage.getItem("supabase.auth.token")}` },
           }),
         ]);
@@ -98,7 +98,7 @@ export const ItemRow: React.FC<ItemRowProps> = ({
     // Fetch the latest categories to ensure any new category is included
     const fetchLatestCategories = async () => {
       try {
-        const categoriesResponse = await api.get("http://127.0.0.1:8000/categories", {
+        const categoriesResponse = await api.get("/categories", {
           headers: { Authorization: `Bearer ${localStorage.getItem("supabase.auth.token")}` },
         });
         setCategories(categoriesResponse.data);
@@ -116,11 +116,10 @@ export const ItemRow: React.FC<ItemRowProps> = ({
   const unitOptions = selectedProduct
     ? [
         { value: selectedProduct.primary_unit_of_measure, label: selectedProduct.primary_unit_of_measure },
-        selectedProduct.secondary_unit_of_measure && {
-          value: selectedProduct.secondary_unit_of_measure,
-          label: selectedProduct.secondary_unit_of_measure,
-        },
-      ].filter(Boolean)
+        ...(selectedProduct.secondary_unit_of_measure 
+          ? [{ value: selectedProduct.secondary_unit_of_measure, label: selectedProduct.secondary_unit_of_measure }] 
+          : [])
+      ]
     : [];
 
   const categoryOptions = categories.map((cat) => ({
@@ -187,7 +186,7 @@ export const ItemRow: React.FC<ItemRowProps> = ({
           <NumberCell
             value={item.quantity}
             onChange={(value) =>
-              onUpdate({ quantity: value, amount: value * (item.unitPrice || 0) })
+              onUpdate({ quantity: Number(value), amount: Number(value) * (item.unitPrice || 0) })
             }
             isEditing={isSelected}
             onFocus={onSelect}
@@ -206,7 +205,7 @@ export const ItemRow: React.FC<ItemRowProps> = ({
           <NumberCell
             value={item.unitPrice}
             onChange={(value) =>
-              onUpdate({ unitPrice: value, amount: (item.quantity || 0) * value })
+              onUpdate({ unitPrice: Number(value), amount: (item.quantity || 0) * Number(value) })
             }
             isEditing={isSelected}
             onFocus={onSelect}
@@ -216,7 +215,7 @@ export const ItemRow: React.FC<ItemRowProps> = ({
         <td className="py-1 px-0.5 border-r border-gray-300 text-black">
           <NumberCell
             value={item.taxPercent}
-            onChange={(value) => onUpdate({ taxPercent: value })}
+            onChange={(value) => onUpdate({ taxPercent: Number(value)})}
             isEditing={isSelected}
             onFocus={onSelect}
             isPercentage={true}

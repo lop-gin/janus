@@ -2,7 +2,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { z } from "zod";
@@ -11,7 +10,7 @@ import { toast } from "sonner";
 import { LoadingAnimation } from "@/components/ui/loading-animation";
 
 // Logo component with simplified styling
-export const NexusForgeLogoLink = () => (
+const NexusForgeLogoLink = () => (
   <Link href="/" className="inline-block">
     <div className="flex items-center space-x-2">
       <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">

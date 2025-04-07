@@ -167,7 +167,7 @@ export const useSalesReceiptForm = () => {
           amount: (item.quantity || 0) * (item.unitPrice || 0),
         })),
       };
-      const response = await api.post("http://127.0.0.1:8000/sales-receipts", salesReceiptData);
+      const response = await api.post("/sales-receipts", salesReceiptData);
       console.log("Sales receipt saved:", response.data);
       return true;
     } catch (error) {

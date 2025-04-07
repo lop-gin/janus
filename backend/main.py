@@ -7,25 +7,34 @@ from typing import Optional, List
 from datetime import date
 from fastapi.middleware.cors import CORSMiddleware
 import json
+import os
 
 app = FastAPI()
 
+# Load the frontend URL from the environment
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")  # Default for local dev
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Adjust if your frontend URL differs
+    allow_origins=[FRONTEND_URL], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Supabase configuration (replace with your credentials)
-SUPABASE_URL = "http://127.0.0.1:54321"  # Get from Supabase dashboard
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0"  # Get from Supabase dashboard
+# Load environment variables
+SUPABASE_URL = os.getenv("SUPABASE_URL", "http://kong:8000")  # Default to internal Docker service name
+SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY", "your_default_anon_key")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# JWT configuration
-SECRET_KEY = "d905fe1c3e9396590bcbdd6e21b95b7f19ac87f6d733074ed7b82ebc14eb41ff"  # Replace with a secure key
-ALGORITHM = "HS256"
+# Load JWT configuration from environment
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")  # Default to HS256 if not set
+
+# Ensure SECRET_KEY is provided
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY environment variable is required")
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 # Pydantic models matching your database schema

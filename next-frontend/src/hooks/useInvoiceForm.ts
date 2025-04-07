@@ -191,7 +191,7 @@ export const useInvoiceForm = () => {
           amount: (item.quantity || 0) * (item.unitPrice || 0),
         })),
       };
-      const response = await api.post("http://127.0.0.1:8000/invoices", invoiceData);
+      const response = await api.post("/invoices", invoiceData);
       console.log("Invoice saved:", response.data);
       return true;
     } catch (error) {

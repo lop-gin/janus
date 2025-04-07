@@ -77,7 +77,7 @@ export const AddCustomerSheet: React.FC<AddCustomerSheetProps> = ({
     }
     try {
       const response = await api.post(
-        "http://127.0.0.1:8000/customers",
+        "/customers",
         { ...newCustomer },
         { headers: { Authorization: `Bearer ${localStorage.getItem("supabase.auth.token")}` } }
       );

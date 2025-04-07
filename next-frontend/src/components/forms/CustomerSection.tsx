@@ -74,7 +74,7 @@ export const CustomerSection: React.FC<CustomerSectionProps> = ({
 
       try {
         setLoading(true);
-        const response = await api.get("http://127.0.0.1:8000/customers", {
+        const response = await api.get("/customers", {
           headers: { Authorization: `Bearer ${token}` },
         });
         setCustomers(response.data);
