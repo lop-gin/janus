@@ -1,2 +1,4 @@
 /backend/venv/
 .env
+/backend/.env
+/next-frontend/.env.local

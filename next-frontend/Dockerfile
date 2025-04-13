@@ -1,4 +1,4 @@
-# Use Node.js 14 with Alpine Linux for a lightweight base image
+# Use Node.js 18 with Alpine Linux for a lightweight base image
 FROM node:18-alpine
 
 # Set the working directory inside the container
@@ -13,12 +13,16 @@ RUN npm install
 # Copy the rest of the application code
 COPY . .
 
-# Build the Next.js app for production
-# Using --no-lint flag to skip ESLint checks during build
-RUN npm run build -- --no-lint
+# Define build-time arguments and set environment variables
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+ARG NEXT_PUBLIC_BACKEND_URL
+ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
+ENV NEXT_PUBLIC_BACKEND_URL=$NEXT_PUBLIC_BACKEND_URL
 
-# # Expose port 3000 (default for Next.js)
-# EXPOSE 3000
+# Build the Next.js app for production
+RUN npm run build -- --no-lint
 
 # Start the app
 CMD ["npm", "start"]

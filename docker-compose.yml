@@ -1,27 +1,31 @@
 version: '3'
 services:
   frontend:
-    build: ./next-frontend
+    build:
+      context: ./next-frontend
+      args:
+        - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+        - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+        - NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL}
     ports:
-      - "3000:3000"
-    environment:
-      - NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL}
-      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
-      - NEXT_PUBLIC_BACKEND_URL=${BACKEND_URL}
+      - "3000:3000"  # Maps container port 3000 to host port 3000
+    depends_on:
+      - backend
+    networks:
+      - janus_network
 
   backend:
     build: ./backend
     ports:
-      - "8000:8000"
+      - "8001:8001"  # Maps container port 8000 to host port 8001
     environment:
-      - SUPABASE_URL=${SUPABASE_INTERNAL_URL}
+      - SUPABASE_URL=http://kong:8000  # Use Supabase's Kong service name
       - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
       - SECRET_KEY=${SECRET_KEY}
       - ALGORITHM=${ALGORITHM}
     networks:
-      - supabase_network
+      - janus_network
 
 networks:
-  supabase_network:
-    external:
-      name: supabase_network_Projects
+  janus_network:
+    external: true

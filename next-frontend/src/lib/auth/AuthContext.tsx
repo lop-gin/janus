@@ -111,11 +111,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           throw new Error('Failed to create company and user records');
         }
   
-        console.log('Registration successful:', rpcData);
-        toast.success('Registration successful! Check your email to confirm your account.');
+        console.log('RPC response:', rpcData);
+        toast.success('Registration successful! Redirecting to dashboard...');
+        router.push('/dashboard');
+      } else {
+        throw new Error('No user returned after signup');
       }
     } catch (error: any) {
-      console.error('Error signing up:', error);
+      console.error('Sign-up error:', error);
       toast.error(error.message || 'Failed to register');
       throw error;
     } finally {
