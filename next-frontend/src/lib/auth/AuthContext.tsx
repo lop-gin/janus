@@ -71,10 +71,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     address?: string;
     is_superadmin?: boolean;
   }) => {
-    setIsLoading(true);
+    setIsLoading(true); // Set loading state to true while processing
     
     try {
-      // Sign up with Supabase Auth
+      // Sign up the user with Supabase Auth
+      // The metadata (full_name, company_name, etc.) is stored in auth.users.raw_user_meta_data
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -90,39 +91,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
   
       if (error) {
+        // If Supabase Auth returns an error (e.g., email already exists), log it and throw it
         console.error('Auth signup error:', error);
         throw error;
       }
   
       if (data.user) {
-        // Call RPC to create company and user records
-        const { data: rpcData, error: rpcError } = await supabase.rpc('register_company_and_user', {
-          p_auth_user_id: data.user.id,
-          p_email: email,
-          p_full_name: metadata?.full_name || '',
-          p_company_name: metadata?.company_name || '',
-          p_company_type: metadata?.company_type || 'manufacturer',
-          p_phone: metadata?.phone || '',
-          p_address: metadata?.address || ''
-        });
-  
-        if (rpcError) {
-          console.error('RPC error:', rpcError);
-          throw new Error('Failed to create company and user records');
-        }
-  
-        console.log('RPC response:', rpcData);
-        toast.success('Registration successful! Redirecting to dashboard...');
-        router.push('/dashboard');
+        // Since autoConfirm=false in Supabase (assumed default behavior), there’s no session yet
+        // The user must confirm their email via a verification link
+        // We no longer call the RPC function here; this is now handled by a trigger after confirmation
+        toast.success('Please check your email for the verification link.'); // Notify user to check email
+        router.push('/auth/check-email'); // Redirect to the new "Check Your Email" page
       } else {
+        // If no user object is returned, something went wrong with signup
         throw new Error('No user returned after signup');
       }
     } catch (error: any) {
+      // Catch any errors (from Supabase or custom), log them, and show a toast notification
       console.error('Sign-up error:', error);
       toast.error(error.message || 'Failed to register');
       throw error;
     } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Reset loading state regardless of success or failure
     }
   };
 
