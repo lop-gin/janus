@@ -51,7 +51,7 @@ export function useUserData() {
           .from('users' as any)
           .select('id, company_id, name')
           .eq('auth_user_id', user.id)
-          .single() as { data: User | null, error: any }; // Explicitly type the response
+          .single() as { data: User | null, error: any };
 
         if (userError) {
           throw new Error(`User fetch error: ${userError.message}`);
@@ -65,7 +65,7 @@ export function useUserData() {
           .from('companies' as any)
           .select('name')
           .eq('id', userDetails.company_id)
-          .single() as { data: Company | null, error: any }; // Explicitly type the response
+          .single() as { data: Company | null, error: any };
 
         if (companyError) {
           throw new Error(`Company fetch error: ${companyError.message}`);
@@ -78,7 +78,7 @@ export function useUserData() {
         const { data: roles, error: rolesError } = await supabase
           .from('user_roles' as any)
           .select('roles(role_name)') // Nested select for the 'roles' relation
-          .eq('user_id', userDetails.id) as { data: UserRole[] | null, error: any }; // Explicitly type the response
+          .eq('user_id', userDetails.id) as { data: UserRole[] | null, error: any };
 
         if (rolesError) {
           throw new Error(`Roles fetch error: ${rolesError.message}`);
@@ -91,7 +91,7 @@ export function useUserData() {
           fullName: userDetails.name,
           roles: roleNames,
         });
-      } catch (err: unknown) { // Use unknown instead of any
+      } catch (err: unknown) {
         const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
         setError(`Failed to fetch user data: ${errorMessage}`);
         console.error('Detailed error:', err);
@@ -101,7 +101,7 @@ export function useUserData() {
     };
 
     fetchUserData();
-  }, [user]);
+  }, [user?.id]); // Updated dependency to user?.id for stability
 
   return { userData, isLoading, error };
 }
