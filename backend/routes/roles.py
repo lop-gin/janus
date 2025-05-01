@@ -11,7 +11,7 @@ router = APIRouter()
 async def get_roles(
     current_user: str = Depends(get_current_user),
     supabase: Client = Depends(get_supabase),
-    _=Depends(check_permission("role_management", "view"))
+    _=Depends(check_permission("Employee", "role_management"))
 ):
     """Retrieve all roles for the user's company."""
     user_response = supabase.table("users").select("company_id").eq("auth_user_id", current_user).execute()
@@ -19,14 +19,17 @@ async def get_roles(
         raise HTTPException(status_code=404, detail="User not found")
     company_id = user_response.data[0]["company_id"]
     response = supabase.table("roles").select("*").eq("company_id", company_id).execute()
-    return response.data or []
+    roles = response.data or []
+    for role in roles:
+        role["permissions"] = json.loads(role["permissions"] or "{}")
+    return roles
 
 @router.post("/", response_model=Role, status_code=status.HTTP_201_CREATED)
 async def create_role(
     role: RoleCreate,
     current_user: str = Depends(get_current_user),
     supabase: Client = Depends(get_supabase),
-    _=Depends(check_permission("role_management", "create"))
+    _=Depends(check_permission("Employee", "role_management"))
 ):
     """Create a new role with specified permissions and color."""
     user_response = supabase.table("users").select("company_id, id").eq("auth_user_id", current_user).execute()
@@ -72,7 +75,7 @@ async def update_role(
     role: RoleCreate,
     current_user: str = Depends(get_current_user),
     supabase: Client = Depends(get_supabase),
-    _=Depends(check_permission("role_management", "edit"))
+    _=Depends(check_permission("Employee", "role_management"))
 ):
     """Update an existing role, preventing changes to system roles."""
     user_response = supabase.table("users").select("company_id, id").eq("auth_user_id", current_user).execute()
@@ -121,7 +124,7 @@ async def delete_role(
     id: int,
     current_user: str = Depends(get_current_user),
     supabase: Client = Depends(get_supabase),
-    _=Depends(check_permission("role_management", "delete"))
+    _=Depends(check_permission("Employee", "role_management"))
 ):
     """Delete a role, preventing deletion of system roles."""
     user_response = supabase.table("users").select("company_id, id").eq("auth_user_id", current_user).execute()
