@@ -1,0 +1,1 @@
+id, enrollment_date, enrolled, duration, created_at, updated_at, event_id_id, user_id_id, attended, _dlt_load_id, _dlt_id, completed_date, join_time

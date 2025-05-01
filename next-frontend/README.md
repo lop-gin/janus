@@ -38,5 +38,5 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 to update C:\Projects\janus\next-frontend\src\lib\supabase\types.ts run these bash commands:
 - cd C:\Projects\janus\next-frontend
-- supabase gen types typescript --db-url "postgresql://postgres:paasword@localhost:5433/postgres" --schema public > src/lib/supabase/types.ts
+- supabase gen types typescript --db-url "postgresql://postgres:password@localhost:5433/postgres" --schema public > src/lib/supabase/types.ts
 (where 'password' is POSTGRES_PASSWORD from C:\Projects\janus\supabase\docker\.env)

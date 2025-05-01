@@ -1,91 +1,78 @@
-"use client";
+'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth/AuthContext';
+import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import AddUserModal from '@/components/modals/AddUserModal';
 import { ActionCell } from '@/components/forms/ItemsTable/cells/ActionCell';
+import { toast } from 'sonner';
 
+// User interface matching backend model
 interface User {
   id: number;
   name: string;
   email: string;
-  gender: 'male' | 'female';
+  gender?: string;
   roles: string[];
-  lastActive: string;
-  status: 'active' | 'deactivated';
-  inviteStatus: 'invited' | 'pending';
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
-const mockUsers: User[] = [
-  {
-    id: 1,
-    name: 'John Doe',
-    email: 'john@example.com',
-    gender: 'male',
-    roles: ['Admin', 'Editor'],
-    lastActive: '2023-04-15T14:30:00',
-    status: 'active',
-    inviteStatus: 'invited'
-  },
-  {
-    id: 2,
-    name: 'Jane Smith',
-    email: 'jane@example.com',
-    gender: 'female',
-    roles: ['Viewer'],
-    lastActive: '2023-03-01T09:00:00',
-    status: 'deactivated',
-    inviteStatus: 'pending'
-  },
-  {
-    id: 3,
-    name: 'Alex Johnson',
-    email: 'alex@example.com',
-    gender: 'male',
-    roles: ['Editor'],
-    lastActive: '2025-04-10T10:15:00',
-    status: 'active',
-    inviteStatus: 'pending'
-  },
-  {
-    id: 4,
-    name: 'Emily Davis',
-    email: 'emily@example.com',
-    gender: 'female',
-    roles: ['Admin', 'Viewer'],
-    lastActive: '2025-03-20T16:45:00',
-    status: 'deactivated',
-    inviteStatus: 'invited'
-  },
-  {
-    id: 5,
-    name: 'Michael Brown',
-    email: 'michael@example.com',
-    gender: 'male',
-    roles: ['Viewer', 'Editor'],
-    lastActive: '2025-04-25T08:00:00',
-    status: 'active',
-    inviteStatus: 'pending'
-  },
-];
+// Role interface for role selection
+interface Role {
+  id: number;
+  role_name: string;
+}
 
 const UsersPage = () => {
-  const [originalUsers, setOriginalUsers] = useState<User[]>([]);
+  const { user, isLoading, hasPermission } = useAuth();
+  const router = useRouter();
+  const [users, setUsers] = useState<User[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState('All');
   const [lastSeenFilter, setLastSeenFilter] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [confirmation, setConfirmation] = useState<{ message: string; onConfirm: () => void } | null>(null);
 
-  const router = useRouter();
-
+  // Redirect if not authenticated or unauthorized
   useEffect(() => {
-    setOriginalUsers(mockUsers);
-  }, []);
+    if (!isLoading && (!user || !hasPermission('Employee', 'user_management', 'view'))) {
+      router.push('/auth/login');
+    }
+  }, [user, isLoading, hasPermission, router]);
+
+  // Fetch users and roles on mount
+  useEffect(() => {
+    if (user && hasPermission('Employee', 'user_management', 'view')) {
+      fetchUsers();
+      fetchRoles();
+    }
+  }, [user]);
+
+  const fetchUsers = async () => {
+    try {
+      const response = await api.get('/users');
+      setUsers(response.data);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to fetch users');
+    }
+  };
+
+  const fetchRoles = async () => {
+    try {
+      const response = await api.get('/roles');
+      setRoles(response.data);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to fetch roles');
+    }
+  };
 
   const filteredUsers = useMemo(() => {
-    let result = originalUsers;
+    let result = users;
 
     if (selectedRole !== 'All') {
       result = result.filter((user) => user.roles.includes(selectedRole));
@@ -94,7 +81,7 @@ const UsersPage = () => {
     if (lastSeenFilter !== 'all') {
       const today = new Date();
       result = result.filter((user) => {
-        const lastActiveDate = new Date(user.lastActive);
+        const lastActiveDate = new Date(user.updated_at);
         const daysDiff = Math.floor((today.getTime() - lastActiveDate.getTime()) / (1000 * 60 * 60 * 24));
         switch (lastSeenFilter) {
           case 'today':
@@ -122,31 +109,41 @@ const UsersPage = () => {
     }
 
     return result;
-  }, [originalUsers, selectedRole, lastSeenFilter, searchTerm]);
+  }, [users, selectedRole, lastSeenFilter, searchTerm]);
 
-  const handleAddUser = (userData: { name: string; email: string; gender: string; roles: string[] }) => {
-    console.log('Adding user:', userData);
-    setShowAddModal(false);
+  const handleAddUser = async (userData: { name: string; email: string; gender: string; roles: string[] }) => {
+    try {
+      // Invite user
+      const response = await api.post('/users/invite', {
+        name: userData.name,
+        email: userData.email,
+        gender: userData.gender,
+      });
+      const newUser = response.data;
+      // Assign roles if any
+      if (userData.roles.length > 0) {
+        const roleIds = roles.filter((r) => userData.roles.includes(r.role_name)).map((r) => r.id);
+        await api.post('/users/roles', { user_id: newUser.id, role_ids: roleIds });
+      }
+      toast.success('User invited successfully');
+      setShowAddModal(false);
+      fetchUsers();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to invite user');
+    }
   };
 
-  const handleStatusChange = (user: User) => {
+  const handleStatusChange = async (user: User) => {
     setConfirmation({
-      message: `Are you sure you want to ${user.status === 'active' ? 'deactivate' : 'activate'} ${user.name}?`,
-      onConfirm: () => {
-        console.log(`Updating status for ${user.name}`);
-        setOriginalUsers((prev) =>
-          prev.map((u) => (u.id === user.id ? { ...u, status: u.status === 'active' ? 'deactivated' : 'active' } : u))
-        );
-      },
-    });
-  };
-
-  const handleInvite = (user: User) => {
-    setConfirmation({
-      message: `Send invitation to ${user.email}?`,
-      onConfirm: () => {
-        console.log(`Sending invitation to ${user.email}`);
-        setOriginalUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, inviteStatus: 'invited' } : u)));
+      message: `Are you sure you want to ${user.is_active ? 'deactivate' : 'activate'} ${user.name}?`,
+      onConfirm: async () => {
+        try {
+          await api.put(`/users/${user.id}`, { is_active: !user.is_active });
+          toast.success(`User ${user.is_active ? 'deactivated' : 'activated'} successfully`);
+          fetchUsers();
+        } catch (error: any) {
+          toast.error(error.message || `Failed to ${user.is_active ? 'deactivate' : 'activate'} user`);
+        }
       },
     });
   };
@@ -154,9 +151,14 @@ const UsersPage = () => {
   const handleDelete = (user: User) => {
     setConfirmation({
       message: `Are you sure you want to delete ${user.name}?`,
-      onConfirm: () => {
-        console.log(`Deleting user ${user.name}`);
-        setOriginalUsers((prev) => prev.filter((u) => u.id !== user.id));
+      onConfirm: async () => {
+        try {
+          await api.delete(`/users/${user.id}`);
+          toast.success('User deleted successfully');
+          fetchUsers();
+        } catch (error: any) {
+          toast.error(error.message || 'Failed to delete user');
+        }
       },
     });
   };
@@ -195,9 +197,12 @@ const UsersPage = () => {
     });
   };
 
-  const getGenderColor = (gender: string) => {
-    return gender === 'male' ? 'bg-blue-500' : 'bg-pink-500';
+  const getGenderColor = (gender?: string) => {
+    return gender === 'male' ? 'bg-blue-500' : gender === 'female' ? 'bg-pink-500' : 'bg-gray-500';
   };
+
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (!user) return null;
 
   return (
     <div className="bg-white min-h-screen p-6">
@@ -216,9 +221,11 @@ const UsersPage = () => {
                 onChange={(e) => setSelectedRole(e.target.value)}
               >
                 <option value="All">All Roles</option>
-                <option value="Admin">Admin</option>
-                <option value="Viewer">Viewer</option>
-                <option value="Editor">Editor</option>
+                {roles.map((role) => (
+                  <option key={role.id} value={role.role_name}>
+                    {role.role_name}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
@@ -251,15 +258,22 @@ const UsersPage = () => {
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
               </svg>
             </div>
-            <Button
-              className="bg-blue-600 text-white hover:bg-blue-700"
-              onClick={() => setShowAddModal(true)}
-            >
-              Add New User
-            </Button>
+            {hasPermission('Employee', 'user_management', 'create') && (
+              <Button
+                className="bg-blue-600 text-white hover:bg-blue-700"
+                onClick={() => setShowAddModal(true)}
+              >
+                Add New User
+              </Button>
+            )}
           </div>
         </div>
 
@@ -271,7 +285,6 @@ const UsersPage = () => {
                 <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Name</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Last Active</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Roles</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Invite Status</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Active Status</th>
                 <th className="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
@@ -300,8 +313,8 @@ const UsersPage = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <p className="text-sm text-gray-900">{formatRelativeTime(user.lastActive)}</p>
-                    <p className="text-xs text-gray-400">{formatExactDate(user.lastActive)}</p>
+                    <p className="text-sm text-gray-900">{formatRelativeTime(user.updated_at)}</p>
+                    <p className="text-xs text-gray-400">{formatExactDate(user.updated_at)}</p>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-wrap gap-2">
@@ -315,22 +328,8 @@ const UsersPage = () => {
                       ))}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {user.inviteStatus === 'invited' ? (
-                      <span className="text-gray-500">Already Invited</span>
-                    ) : user.status === 'deactivated' ? (
-                      <span className="text-gray-500">Not Invited</span>
-                    ) : (
-                      <Button
-                        className="bg-blue-500 text-white hover:bg-blue-600"
-                        onClick={() => handleInvite(user)}
-                      >
-                        Invite
-                      </Button>
-                    )}
-                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {user.status === 'active' ? 'Active' : 'Deactivated'}
+                    {user.is_active ? 'Active' : 'Deactivated'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex justify-center gap-2">
@@ -340,6 +339,7 @@ const UsersPage = () => {
                           size="sm"
                           className="w-full"
                           onClick={() => router.push(`/users/${user.id}`)}
+                          disabled={!hasPermission('Employee', 'user_management', 'edit')}
                         >
                           View/Edit
                         </Button>
@@ -347,14 +347,22 @@ const UsersPage = () => {
                       <div className="w-24">
                         <Button
                           size="sm"
-                          className={`w-full ${user.status === 'active' ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-green-500 text-white hover:bg-green-600'}`}
+                          className={`w-full ${
+                            user.is_active
+                              ? 'bg-red-500 text-white hover:bg-red-600'
+                              : 'bg-green-500 text-white hover:bg-green-600'
+                          }`}
                           onClick={() => handleStatusChange(user)}
+                          disabled={!hasPermission('Employee', 'user_management', 'edit')}
                         >
-                          {user.status === 'active' ? 'Deactivate' : 'Activate'}
+                          {user.is_active ? 'Deactivate' : 'Activate'}
                         </Button>
                       </div>
                       <div className="w-24 flex justify-center">
-                        <ActionCell onRemove={() => handleDelete(user)} />
+                        <ActionCell
+                          onRemove={() => handleDelete(user)}
+                          disabled={!hasPermission('Employee', 'user_management', 'delete')}
+                        />
                       </div>
                     </div>
                   </td>
@@ -364,7 +372,12 @@ const UsersPage = () => {
           </table>
         </div>
 
-        <AddUserModal isOpen={showAddModal} onClose={() => setShowAddModal(false)} onAddUser={handleAddUser} />
+        <AddUserModal
+          isOpen={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          onAddUser={handleAddUser}
+          availableRoles={roles.map((r) => r.role_name)}
+        />
 
         {confirmation && (
           <div className="fixed inset-0 bg-gray-600 bg-opacity-50 backdrop-blur-md flex items-center justify-center z-50">

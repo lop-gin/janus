@@ -1,22 +1,17 @@
 'use client';
 
-import { useState, useRef } from "react";
-import DashboardHeader from "@/components/dashboard/DashboardHeader";
-import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
-import NewActionMenu from "@/components/dashboard/NewActionMenu";
-import { useAuth } from "@/lib/auth/AuthContext";
-import { redirect } from "next/navigation";
+import { useState, useRef } from 'react';
+import { useAuth } from '@/lib/auth/AuthContext';
+import { redirect } from 'next/navigation';
+import DashboardHeader from '@/components/dashboard/DashboardHeader';
+import DashboardSidebar from '@/components/dashboard/DashboardSidebar';
+import NewActionMenu from '@/components/dashboard/NewActionMenu';
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const { user, isLoading } = useAuth();
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const { user, isLoading, hasPermission } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [newMenuOpen, setNewMenuOpen] = useState(false);
-  // Using ! to assert non-null to match the expected type in NewActionMenu
-  const newButtonRef = useRef<HTMLButtonElement>(null!);
+  const newButtonRef = useRef<HTMLButtonElement>(null);
 
   // Redirect if not authenticated
   if (!isLoading && !user) {
@@ -47,6 +42,7 @@ export default function DashboardLayout({
         isOpen={sidebarOpen}
         toggle={toggleSidebar}
         toggleNewMenu={toggleNewMenu}
+        hasPermission={hasPermission}
       />
 
       {/* Main content */}
@@ -54,11 +50,8 @@ export default function DashboardLayout({
         className="flex-1 flex flex-col min-h-screen transition-all duration-300"
         style={{ marginLeft: sidebarOpen ? '14rem' : '0' }}
       >
-        <DashboardHeader
-          sidebarOpen={sidebarOpen}
-          toggleSidebar={toggleSidebar}
-        />
-        
+        <DashboardHeader sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
+
         {/* New action menu popup */}
         {newMenuOpen && (
           <NewActionMenu
@@ -70,9 +63,7 @@ export default function DashboardLayout({
         )}
 
         <main className="flex-1 p-6">
-          <div className="mx-auto">
-            {children}
-          </div>
+          <div className="mx-auto">{children}</div>
         </main>
       </div>
     </div>
