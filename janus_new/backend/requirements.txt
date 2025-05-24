@@ -1,0 +1,6 @@
+fastapi
+uvicorn[standard]
+python-multipart
+supabase-py
+pydantic-settings
+python-jose[cryptography] # Added for password generation

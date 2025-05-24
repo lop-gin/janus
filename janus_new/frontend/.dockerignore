@@ -1,0 +1,51 @@
+# Node modules
+node_modules
+.pnp.*
+
+# Next.js build output folder (will be copied from build stage)
+#.next
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment files (should be passed at runtime)
+.env
+.env*.local
+.env.development
+.env.production
+.env.test
+
+# Docker specific files
+Dockerfile
+.dockerignore
+
+# Git
+.git
+.gitignore
+
+# Editor and OS specific
+.vscode
+.idea
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+
+# Test files and coverage (if any)
+coverage/
+*.test.js
+*.test.jsx
+*.test.ts
+*.test.tsx
+jest.config.js
+playwright.config.ts
+playwright-report/
+
+# Markdown files (if not needed in image)
+*.md
+
+# TypeScript cache
+tsconfig.tsbuildinfo

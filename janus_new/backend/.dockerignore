@@ -1,0 +1,50 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+env/
+.venv/
+.env/ # If you have a different name for your venv
+
+# Environment variables files
+.env
+.env.*
+!.env.example # Keep .env.example if you want it in the image as a template
+
+# IDE and editor specific files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Docker specific files
+Dockerfile
+.dockerignore
+
+# Git
+.git
+.gitignore
+
+# Test files (if not running tests inside the image)
+tests/
+pytest.ini
+.pytest_cache/
+coverage/
+.coverage
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Markdown files (if not needed in the image)
+*.md
+
+# MyPy cache
+.mypy_cache/
+
+# Other project specific files not needed in runtime
+# e.g. notes/, docs/, etc.
